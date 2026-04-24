@@ -1,5 +1,5 @@
 """
-Synchronized merge of user and defaults before sinks (SAST: sync / merge point).
+Synchronized merge of user input and defaults before DB or file sinks.
 
 Taint from multiple fields is combined and forwarded so analyzers can track
 merge and synchronize style flows across modules.

@@ -1,4 +1,4 @@
-"""Single entry that routes to different sinks (indirect call — harder for some SAST)."""
+"""Single entry that routes to different back-end handlers from one path (indirect dispatch)."""
 from __future__ import annotations
 
 from flask import Blueprint, Response, jsonify, request

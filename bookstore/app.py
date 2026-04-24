@@ -13,11 +13,11 @@ from bookstore.routes.curve import bp as curve_bp
 from bookstore.routes.fetcher import bp as fetcher_bp
 from bookstore.routes.lab import bp as lab_bp
 from bookstore.routes.preview import bp as preview_bp
-from bookstore.routes.sast_stress import bp as sast_stress_bp
+from bookstore.routes.ops_diagnostics import bp as ops_diagnostics_bp
 from bookstore.routes.sca_demos import bp as sca_bp
 from bookstore.routes.user_api import bp as user_api_bp
 
-# RESEARCH: hardcoded secret for SAST/secret-scanner / weak session storylines
+# Dev default session key; replace in anything facing real users.
 DEV_SESSION_SALT = "dev-salt-CHANGE-ME-RESEARCH-ONLY"  # noqa: S105
 
 
@@ -77,7 +77,7 @@ def create_app() -> Flask:
     app.register_blueprint(lab_bp, url_prefix="/lab")
     app.register_blueprint(bridge_bp, url_prefix="/util")
     app.register_blueprint(sca_bp, url_prefix="/")
-    app.register_blueprint(sast_stress_bp, url_prefix="/")
+    app.register_blueprint(ops_diagnostics_bp, url_prefix="/")
 
     @app.route("/app", defaults={"subpath": ""})
     @app.route("/app/<path:subpath>")

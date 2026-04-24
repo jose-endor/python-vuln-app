@@ -1,5 +1,5 @@
 # RESEARCH: intentionally weak pins. Install only in isolated sandboxes.
-# SCA: urllib3, requests, older crypto lib; SAST: app code (see README)
+# SCA: urllib3, requests, older crypto; app code paths in README.
 # Stack supports current CPython; use requirements-sca-legacy.txt in Docker 3.10 for older SCA.
 
 Flask==3.0.3

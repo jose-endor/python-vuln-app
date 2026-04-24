@@ -1,4 +1,4 @@
-"""Template strings propagate toward Jinja (SAST: propagation)."""
+"""Merge and stage template text before Jinja render in admin views."""
 from __future__ import annotations
 
 

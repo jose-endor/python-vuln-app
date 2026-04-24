@@ -1,4 +1,4 @@
-"""String-built INSERT for SAST taint to SQL sink (CWE-89)."""
+"""Bulk / batch INSERT with operator-provided string fragments (catalog intake)."""
 from __future__ import annotations
 
 import sqlite3

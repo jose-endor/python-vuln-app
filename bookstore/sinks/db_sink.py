@@ -1,4 +1,4 @@
-"""SQL execution sink (SAST: sink — CWE-89)."""
+"""Run assembled SQL; caller is responsible for parameterization (legacy inventory paths)."""
 from __future__ import annotations
 
 import sqlite3

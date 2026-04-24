@@ -1,4 +1,4 @@
-"""Dispatch: user kind string merged with body before indirect sink (SAST sync)."""
+"""Dispatch: user kind string merged with body before the selected handler runs."""
 from __future__ import annotations
 
 

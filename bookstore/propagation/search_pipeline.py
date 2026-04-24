@@ -1,4 +1,4 @@
-"""Search terms flow from routes toward SQL assembly (SAST: propagation)."""
+"""Search and filter text flows from HTTP params toward SQL string assembly (inventory list)."""
 from __future__ import annotations
 
 from typing import Any, Dict, List

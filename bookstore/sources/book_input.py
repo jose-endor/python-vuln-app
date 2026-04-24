@@ -1,4 +1,4 @@
-"""User-controlled values enter the app (SAST: sources)."""
+"""Normalize and carry request fields into catalog / intake flows."""
 from __future__ import annotations
 
 from typing import Any, Dict

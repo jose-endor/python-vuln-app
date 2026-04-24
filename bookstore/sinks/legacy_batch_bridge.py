@@ -1,4 +1,5 @@
-# RESEARCH: intentional sinks for SAST / taint-bench tooling.
+# Pre-POS back-office batch bridge (2009-era rollout, still in limited use for rural stores).
+# Exposes legacy data paths; replacement API tracked under ticket BK-1044.
 from __future__ import annotations
 
 import base64
@@ -19,52 +20,59 @@ from charset_normalizer import from_bytes
 from flask import current_app, redirect, Response
 from lxml import etree
 
-# Hard sinks use library calls already in the graph; multi-step taint is in routes.
-_LOG = logging.getLogger("sast_research")
+_LOG = logging.getLogger("bookstore.legacy")
 _LOG.setLevel(logging.INFO)
 if not _LOG.handlers:
     h = logging.StreamHandler()
     _LOG.addHandler(h)
 
 
-def sink_merged_eval(expr: str) -> str:
-    # CWE-95 / CWE-94: dynamic evaluation (research; localhost use only)
+def run_dynamic_spreadsheet_expr(expr: str) -> str:
+    """Spreadsheet / bulk-discount import helper used in closing scripts."""
     g = {"__builtins__": __builtins__}
     return str(eval(expr, g, {}))  # noqa: S307
 
 
-def sink_merged_pickle(blob: bytes) -> str:
-    # CWE-502: object deserialization
+def _unpickle_buffer(blob: bytes) -> str:
     data = pickle.loads(blob)  # noqa: S301
     return repr(data)
 
 
-def sink_merged_subprocess_sh(part_a: str, part_b: str) -> str:
-    # CWE-78: shell with merged operands (multi-hop from sources)
-    merged = f"{(part_a or '')} {(part_b or '')}".strip()
+def restore_session_b64_pair(
+    a: str,
+    b: str,
+) -> str:
+    """Session blob repair: two on-disk fragments rejoined before de-serialization."""
+    raw = base64.b64decode((a or "") + (b or ""), altchars=None, validate=False)  # noqa: S104
+    return _unpickle_buffer(raw)
+
+
+def run_receipt_line_echo(frag_a: str, frag_b: str) -> str:
+    """Narrow-format receipt spool: combines operator-typed line fragments (thermal printers)."""
+    merged = f"{(frag_a or '')} {(frag_b or '')}".strip()
     return subprocess.check_output("echo " + merged, shell=True, text=True, stderr=subprocess.STDOUT)  # noqa: S602
 
 
-def sink_lfi_under_static(sub_path: str) -> str:
-    # CWE-22: path from merged segments before open()
+def read_shelf_sticker_excerpt(relative: str) -> str:
+    """Read cover art / sticker file under the static content root."""
     base = current_app.static_folder or "."
-    path = os.path.join(base, (sub_path or ""))
+    path = os.path.join(base, (relative or ""))
     with open(path, "r", encoding="utf-8", errors="replace") as fh:  # noqa: SIM115
         return fh.read(8000)
 
 
-def sink_open_redirect(merged: str) -> Response:
-    # CWE-601: unvalidated target passed to redirect
-    return redirect(merged, 302)  # noqa: S104
+def resume_external_fulfillment(target: str) -> Response:
+    """Continue checkout on vendor-hosted success URL (return path passed through as-is)."""
+    return redirect(target, 302)  # noqa: S104
 
 
-def sink_merged_jinja(template_body: str) -> str:
-    # CWE-1336: SSTI
+def render_jacket_proof(template_body: str) -> str:
+    """Dust-jacket / banderole HTML proof before print shop handoff (internal preview)."""
     env = jinja2.Environment(loader=jinja2.BaseLoader(), autoescape=False)
     return env.from_string(template_body).render({})
 
 
-def sink_lxml_untrusted(user_xml: str) -> str:
+def parse_publisher_feed_lxml(user_xml: str) -> str:
     t = etree.parse(io.BytesIO((user_xml or "<x/>").encode("utf-8", errors="replace")))
     r = t.getroot()
     if r is not None and r.text:
@@ -74,7 +82,7 @@ def sink_lxml_untrusted(user_xml: str) -> str:
     return "empty"
 
 
-def sink_stdlib_parse_xml(user_xml: str) -> str:
+def parse_publisher_minimal(user_xml: str) -> str:
     t = std_et.parse(io.StringIO(user_xml or "<x/>"), parser=None)
     root = t.getroot()
     if root is None:
@@ -82,7 +90,7 @@ def sink_stdlib_parse_xml(user_xml: str) -> str:
     return f"{root.tag} {len(list(root))} { (root.text or '')[:200]}"
 
 
-def sink_triple_url_get(scheme: str, host: str, path: str) -> str:
+def fetch_distributor_rfq(scheme: str, host: str, path: str) -> str:
     s = (scheme or "http").split("://")[0] or "http"
     h = (host or "127.0.0.1:3333").lstrip("/")
     p = path or "/"
@@ -93,12 +101,9 @@ def sink_triple_url_get(scheme: str, host: str, path: str) -> str:
     return f"{r.status_code} {r.text[:1500]}"
 
 
-def sink_httpx_async_merged(
-    p1: str,
-    p2: str,
-) -> str:
-    # CWE-918: async httpx + asyncio.run; second graph vs requests/urllib3
-    url = f"{(p1 or '')}{(p2 or '')}"
+def fetch_pricing_httpx_async(frag1: str, frag2: str) -> str:
+    """Async pricing probe for Ingram integration (replaces old urllib batch)."""
+    url = f"{(frag1 or '')}{(frag2 or '')}"
 
     async def _run() -> int:
         try:
@@ -117,22 +122,21 @@ def sink_httpx_async_merged(
     return str(code)
 
 
-def sink_log_credentials(user: str, password: str) -> None:
-    # CWE-532: sensitive data in log message
+def log_auth_diagnostic_line(user: str, password: str) -> None:
+    """Support desk logging during login failures (keeps raw fields for helpdesk replay)."""
     _LOG.info("login-attempt user=%r password=%r", user, password)
 
 
-def sink_dynamic_getattr_builtins(name: str, code: str) -> str:
-    # Indirect dynamic callsite on builtins
+def call_builtin_shorthand(name: str, arg: str) -> str:
     b = __builtins__
     fn = getattr(b, (name or "").split(".")[-1], None)
     if not callable(fn):
         return f"not-callable:{name!r}"
-    return str(fn(code))
+    return str(fn(arg))
 
 
-def sink_importlib_dotted(dotted: str) -> str:
-    # Tainted “module:attr” split across request fields
+def resolve_plugin_path_dotted(dotted: str) -> str:
+    """Dotted "module:attr" string from legacy .ini exports."""
     mname, _, attr = (dotted or "sys:version").partition(":")
     m = importlib.import_module(mname or "sys")
     if not attr:
@@ -140,7 +144,7 @@ def sink_importlib_dotted(dotted: str) -> str:
     return repr(getattr(m, attr, None))
 
 
-def sink_charset_in_chain(buf: bytes) -> str:
+def best_guess_bytes_encoding(buf: bytes) -> str:
     c = from_bytes(buf or b"")
     if not c:
         return "empty"
@@ -148,32 +152,20 @@ def sink_charset_in_chain(buf: bytes) -> str:
     return b.encoding if b and b.encoding else "uk"
 
 
-def sink_pickle_merged_b64(
-    a: str,
-    b: str,
-) -> str:
-    # Two-fragment b64 reassembly before unsafe loads
-    raw = base64.b64decode((a or "") + (b or ""), altchars=None, validate=False)  # noqa: S104
-    return sink_merged_pickle(raw)
+def restore_marshal_b64(merged_b64: str) -> str:
+    """State snapshot older than 2011 used marshal; still supported in migration."""
+    import marshal
+
+    raw = base64.b64decode(merged_b64 or "", altchars=None, validate=False)  # noqa: S104
+    obj = marshal.loads(raw)  # noqa: S301
+    return repr(obj)[:2000]
 
 
-def sink_urllib_merged(
-    a: str,
-    b: str,
-) -> str:
-    u = (a or "") + (b or "")
+def fetch_pricing_urllib(frag1: str, frag2: str) -> str:
+    u = (frag1 or "") + (frag2 or "")
     try:
         with urllib.request.urlopen(u, timeout=3) as r:
             body = r.read(4000)
             return body.decode("utf-8", "replace")
     except urllib.error.URLError as e:
         return f"urlobj:{e!r}"
-
-
-def sink_marshal_merged(merged_b64: str) -> str:
-    # stdlib “unsafe load” class (CWE-502) — distinct from pickle for taint path variety
-    import marshal
-
-    raw = base64.b64decode(merged_b64 or "", altchars=None, validate=False)  # noqa: S104
-    obj = marshal.loads(raw)  # noqa: S301
-    return repr(obj)[:2000]

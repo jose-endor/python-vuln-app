@@ -1,4 +1,4 @@
-"""Multi-step assembly of strings from different sources (order-sensitive SAST taint)."""
+"""Assemble substrings from multiple request fields; merge order is explicit at each call site."""
 from __future__ import annotations
 
 from collections.abc import Sequence

@@ -31,7 +31,7 @@
    python -m run
    ```
 
-4. **Open the shop:** the floor display at [http://127.0.0.1:3333/](http://127.0.0.1:3333/) and the member view at [http://127.0.0.1:3333/app](http://127.0.0.1:3333/app) (Vite 2 + React 17 + TS; build with `cd frontend && npm ci && npm run build` locally, or use Docker, which bakes the SPA in). Seeded logins are loaded from **`data/users.json`** (defaults: **admin** / **admin**, **jordan** / **sunday**, **alex** / **hunter2**). The catalog seed comes from **`data/inventory.json`**; both are read into the DB on **first** init when the DB is empty. (For evaluators: SAST/SCA stress routes are still in the **backend** — e.g. `/sast/…` and `/sca/…` — the storefront UIs are plain bookstore copy.)
+4. **Open the shop:** the floor display at [http://127.0.0.1:3333/](http://127.0.0.1:3333/) and the member view at [http://127.0.0.1:3333/app](http://127.0.0.1:3333/app) (Vite 2 + React 17 + TS; build with `cd frontend && npm ci && npm run build` locally, or use Docker, which bakes the SPA in). Seeded logins are loaded from **`data/users.json`** (defaults: **admin** / **admin**, **jordan** / **sunday**, **alex** / **hunter2**). The catalog seed comes from **`data/inventory.json`**; both are read into the DB on **first** init when the DB is empty. (For evaluators: static analysis–heavy and dependency demo routes are still in the **backend** — e.g. `/v1/ops/…` (legacy back-office) and `/sca/…` — the storefront UIs are plain bookstore copy.)
 
 5. **Stop** with `Ctrl+C`.
 
@@ -66,7 +66,7 @@ docker compose up --build
 - **`docker compose up --build`:** `postgres` + one **`vulnerable-bookstore`** container. No extra auth or nginx services.
 - **Seed data:** `data/inventory.json` and `data/users.json` (three accounts including **admin** / **admin**). Edit those files, reset the database volume, and start again to pick up a new first-run seed.
 - **`Dockerfile` multi‑stage:** Node **18** builds the Vite 2 + React 17 + TypeScript storefront into `static/app/`, then the Python image copies it.
-- **Evaluators only:** HTTP APIs that look less “bookstore” (`GET /api/users?…`, `/api/exposed/users` with env flag, SAST at `/sast/…`, SCA at `/sca/…`) are unchanged; they are not linked from the shop UIs.
+- **Evaluators only:** HTTP APIs that are not part of the normal shopping flow (`GET /api/users?…`, `/api/exposed/users` with env flag, back-office/legacy at `/v1/ops/…`, SCA at `/sca/…`) are unchanged; they are not linked from the shop UIs.
 - **Optional:** run **`python -m run_auth`** locally for a tiny `AUTH_SERVICE_MODE=1` listen on `5001` (same codepath, not part of compose by default).
 - **Kubernetes** (`k8s/research-*.yaml`): one **bookstore** deployment + Postgres + single-host ingress (auth-only manifests removed to match compose). A deliberately bad one‑file sample is still `k8s/deployment-insecure.yaml`. **Do not** apply in production clusters.
 
@@ -111,30 +111,30 @@ Each row is a **different package** with an **intentionally dated** line in `req
 
 ---
 
-## 2) SAST — 10+ “hard” issues (multi‑source, propagation, indirect sinks)
+## 2) Challenging static analysis — 10+ “hard” issues (multi‑source, propagation, indirect sinks)
 
 Many findings are **CWE**‑shaped. Flows on purpose cross **`sources` → `propagation` / `sync` → `sinks`**, and several routes merge **more than one** of `{query, JSON, headers, raw body, cookies}` so shallow single‑file regex engines miss the sink.
 
 | # | Theme / CWE (typical) | Why it is “harder” | Entry point (examples) |
 |---|------------------------|--------------------|------------------------|
-| 1 | Merged `eval` (CWE‑95) | `strip_noise` on one operand + ordered merge of `p1`…`p3` | `GET /sast/merged_eval?p1=&p2=&p3=` |
-| 2 | Pickle / merged b64 (CWE‑502) | two base64 halves concatenated pre‑`loads` | `GET /sast/merged_pickle?a=&b=` |
-| 3 | `marshal` loads (CWE‑502) | `interleave` reorders two halves of one blob | `GET /sast/merged_marshal?a&b&order=` |
-| 4 | `subprocess` + shell (CWE‑78) | JSON `a` / `b` joined at the sink (no route‑local quote) | `POST /sast/merged_subprocess` body `{"a":…,"b":…}` |
-| 5 | Path / LFI (CWE‑22) | `tuple_join` of `a`,`b` plus a third `ext` segment | `GET /sast/lfi?a=&b=&ext=` |
-| 6 | Open redirect (CWE‑601) | `a` + `b` merged, passed to `redirect` | `GET /sast/redirect?a=&b=` |
-| 7 | SSTI / Jinja (CWE‑1336) | `a` + `b` + `c` merged before `from_string` | `POST /sast/merged_jinja` |
-| 8 | `lxml` on raw XML (CWE‑91 / 611 class) | POST body only | `POST /sast/lxml` |
-| 9 | `xml.etree` parse (stdlib) | same story, different module path | `POST /sast/stdlib_xml` |
-| 10 | SSRF, triple URL (CWE‑918) | `s` + `h` + `p` reassembled in one sink that calls `requests` | `GET /sast/triple_url?s=&h=&p=` |
-| 11 | SSRF, `httpx` + `asyncio.run` (CWE‑918) | **different** HTTP stack and async entry | `GET /sast/aio_merged?a&b` |
-| 12 | SSRF, `urllib.request` (CWE‑918) | stdlib client, merged URL | `GET /sast/urllib_merged?a&b` |
-| 13 | Log injection / secrets in logs (CWE‑532) | password field sent to a logger with `%r` | `POST /sast/cred_log` JSON `{"u":…,"p":…}` |
-| 14 | `getattr(__builtins__, …)` (CWE‑95 class) | indirect dynamic call | `GET /sast/builtin?n=…&c=…` |
-| 15 | `importlib` + tainted `module:attr` (CWE‑95 / 20) | dotted string split in sink | `GET /sast/import_dotted?d=…` |
-| 16 | Charset + merge (CWE‑20 chain) | base64 → `charset_normalizer` after merge (SCA+SAST) | `GET /sast/charset_chain?b64=…` |
+| 1 | Merged `eval` (CWE‑95) | `strip_noise` on one operand + ordered merge of `p1`…`p3` | `GET /v1/ops/finance_preview?p1=&p2=&p3=` |
+| 2 | Pickle / merged b64 (CWE‑502) | two base64 halves concatenated pre‑`loads` | `GET /v1/ops/restore_b64?a=&b=` |
+| 3 | `marshal` loads (CWE‑502) | `interleave` reorders two halves of one blob | `GET /v1/ops/restore_marshal?a&b&order=` |
+| 4 | `subprocess` + shell (CWE‑78) | JSON `a` / `b` joined at the sink (no route‑local quote) | `POST /v1/ops/receipt_echo` body `{"a":…,"b":…}` |
+| 5 | Path / LFI (CWE‑22) | `tuple_join` of `a`,`b` plus a third `ext` segment | `GET /v1/ops/shelf_excerpt?a=&b=&ext=` |
+| 6 | Open redirect (CWE‑601) | `a` + `b` merged, passed to `redirect` | `GET /v1/ops/vendor_redirect?a=&b=` |
+| 7 | SSTI / Jinja (CWE‑1336) | `a` + `b` + `c` merged before `from_string` | `POST /v1/ops/jacket_preview` |
+| 8 | `lxml` on raw XML (CWE‑91 / 611 class) | POST body only | `POST /v1/ops/ingest_xml_lxml` |
+| 9 | `xml.etree` parse (stdlib) | same story, different module path | `POST /v1/ops/ingest_xml_stdlib` |
+| 10 | SSRF, triple URL (CWE‑918) | `s` + `h` + `p` reassembled in one sink that calls `requests` | `GET /v1/ops/vendor_status?s=&h=&p=` |
+| 11 | SSRF, `httpx` + `asyncio.run` (CWE‑918) | **different** HTTP stack and async entry | `GET /v1/ops/vendor_status_aio?a&b` |
+| 12 | SSRF, `urllib.request` (CWE‑918) | stdlib client, merged URL | `GET /v1/ops/vendor_status_urllib?a&b` |
+| 13 | Log injection / secrets in logs (CWE‑532) | password field sent to a logger with `%r` | `POST /v1/ops/login_diagnostics` JSON `{"u":…,"p":…}` |
+| 14 | `getattr(__builtins__, …)` (CWE‑95 class) | indirect dynamic call | `GET /v1/ops/builtin_lookup?n=…&c=…` |
+| 15 | `importlib` + tainted `module:attr` (CWE‑95 / 20) | dotted string split in sink | `GET /v1/ops/module_dotted?d=…` |
+| 16 | Charset + merge (CWE‑20 chain) | base64 → `charset_normalizer` after merge (SCA+SAST) | `GET /v1/ops/encoding_sanity?b64=…` |
 
-**Discoverability index:** `GET /sast/index` (JSON list of the routes above).
+**Discoverability index:** `GET /v1/ops/capabilities` (JSON list of the `v1/ops` routes above; implementation: `bookstore/routes/ops_diagnostics.py`, `bookstore/sinks/legacy_batch_bridge.py`).
 
 **“Classic” flows (still in the app, multi‑file):** SQLite injection (`/api/books` — `search_pipeline` → `db_sink`), command execution (`/util/backup` → `shell_sink`), SSRF v1 (`/util/fetch` + `url_pipeline` → `http_client_sink`), SSTI admin (`/admin/preview` → `jinja_sink`), reflected XSS (`/echo` — `|safe` in a template string), `yaml.unsafe_load` on `/admin/ingest` (`yaml_sink`), ReDoS (`/lab/redos` through `regex_chain` → `regex_sink`), and indirect `/util/bridge?kind=…` (`dispatch_merge` → `markdown` / lxml `fragment`).
 

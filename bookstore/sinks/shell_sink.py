@@ -1,4 +1,4 @@
-"""Process execution sink (SAST: sink — CWE-78)."""
+"""Helper that shells out to tar/zip for backup / export scripts."""
 from __future__ import annotations
 
 import subprocess

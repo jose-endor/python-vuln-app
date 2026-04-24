@@ -5,7 +5,7 @@ import base64
 import ecdsa  # SCA: older ecdsa
 from cryptography.fernet import Fernet  # SCA: not-latest cryptography
 
-# Hard-coded Fernet key material (SAST: use of long-lived secret in source)
+# Long-lived dev key; replace in any shared environment.
 DEMO_FERNET_KEY: bytes = base64.urlsafe_b64encode(b"\x00" * 32)  # noqa: S105
 
 

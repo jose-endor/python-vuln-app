@@ -1,4 +1,4 @@
-"""URL value propagates for outbound HTTP (SAST: propagation)."""
+"""Carry and normalize a URL from request args toward outbound HTTP clients."""
 from __future__ import annotations
 
 from urllib.parse import urlparse

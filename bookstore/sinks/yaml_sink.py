@@ -1,4 +1,4 @@
-"""Insecure yaml.load sink; uses PyYAML 5.x weak defaults (SAST + SCA)."""
+"""YAML load path for admin ingest; prefer safe_load in new code paths."""
 from __future__ import annotations
 
 import yaml  # SCA: older PyYAML

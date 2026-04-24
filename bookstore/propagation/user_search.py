@@ -1,4 +1,4 @@
-"""Taint merge for user listing (SAST) — separate module from book search to multiply graph noise."""
+"""Build WHERE clause fragments for staff user search; separate from book search for less coupling."""
 from __future__ import annotations
 
 from typing import Any, Dict

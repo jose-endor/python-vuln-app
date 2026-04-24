@@ -1,4 +1,4 @@
-"""Outbound HTTP; calls requests (SAST + SCA) — user URL drives request."""
+"""Outbound HTTP via requests; URL comes from higher-level fetch routes."""
 from __future__ import annotations
 
 import requests

@@ -1,4 +1,4 @@
-"""Lab endpoints: argument extraction (SAST sources)."""
+"""Lab / demo endpoints: parse query and body into plain Python values."""
 from __future__ import annotations
 
 from typing import Any, Dict

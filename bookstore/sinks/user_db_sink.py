@@ -1,4 +1,4 @@
-"""Vulnerable list query on users (CWE-89) — SAST: distinct sink from book list."""
+"""Execute user listing query; WHERE clause is passed through from the route layer."""
 from __future__ import annotations
 
 import sqlite3
