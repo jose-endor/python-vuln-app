@@ -16,8 +16,8 @@ function errMsg(e: unknown): string {
 
 export const App: React.FC = () => {
   const [me, setMe] = useState<Me>(null);
-  const [u, setU] = useState("demo");
-  const [p, setP] = useState("demo");
+  const [u, setU] = useState("admin");
+  const [p, setP] = useState("admin");
   const [regU, setRegU] = useState("");
   const [regP, setRegP] = useState("");
   const [books, setBooks] = useState<Book[] | null>(null);
@@ -40,13 +40,14 @@ export const App: React.FC = () => {
       setBooks(Array.isArray(data) ? data : []);
     } catch (e) {
       setBooks([]);
-      setErr("Books: " + errMsg(e));
+      setErr("Could not load the catalog. " + errMsg(e));
     }
   }, []);
 
   useEffect(() => {
     void loadMe();
-  }, [loadMe]);
+    void loadBooks();
+  }, [loadMe, loadBooks]);
 
   const login = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,9 +55,8 @@ export const App: React.FC = () => {
     try {
       await api.post("/api/auth/login", { username: u, password: p });
       await loadMe();
-      await loadBooks();
     } catch (ex) {
-      setErr("Login: " + errMsg(ex));
+      setErr("Sign-in: " + errMsg(ex));
     }
   };
 
@@ -69,7 +69,7 @@ export const App: React.FC = () => {
       setP(regP);
       setRegP("");
     } catch (ex) {
-      setErr("Register: " + errMsg(ex));
+      setErr("Account: " + errMsg(ex));
     }
   };
 
@@ -78,34 +78,54 @@ export const App: React.FC = () => {
     try {
       await api.post("/api/auth/logout");
     } catch {
-      /* */
+      /* hush, cookies */
     }
     setMe(null);
-    setBooks(null);
   };
 
   return (
     <div className="page">
-      <header className="head">
-        <h1>Stack &amp; Spine (React 17 + TS 4.9 + Axios 0.21)</h1>
-        <p className="sub">
-          Research-only SPA. Cleartext passwords, weak cookies, and dangerous APIs live on the
-          same origin. Default: <code>demo</code> / <code>demo</code> or <code>admin</code> /{" "}
-          <code>admin</code>
+      <header className="hero">
+        <p className="kicker">Stack &amp; Spine</p>
+        <h1>Your next read is on the shelf.</h1>
+        <p className="lede">
+          Browse what we have in store; sign in for members&apos; hold requests and order notes.
         </p>
+        <a className="link-quiet" href="/">
+          &larr; Storefront (floor display)
+        </a>
       </header>
+
       {err && <div className="err">{err}</div>}
-      <div className="row">
-        <div className="card">
-          <h2>Session</h2>
+
+      <div className="grid-main">
+        <section className="panel catalog-panel" aria-label="Current titles">
+          <h2>Shop the catalog</h2>
+          {books == null && <p className="muted">Bringing up titles…</p>}
+          {books && books.length === 0 && <p className="muted">No matches—try a wider search in the other view.</p>}
+          {books && books.length > 0 && (
+            <ul className="book-shelf">
+              {books.map((b) => (
+                <li key={b.id} className="book-tile">
+                  <span className="book-cat">{b.category}</span>
+                  <span className="book-title">{b.title}</span>
+                  <span className="book-author">{b.author}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <aside className="panel account" aria-label="Account">
+          <h2>Member sign-in</h2>
           {!me ? (
             <form onSubmit={login} className="form">
               <label>
-                User
+                <span>Username</span>
                 <input value={u} onChange={(e) => setU(e.target.value)} autoComplete="username" />
               </label>
               <label>
-                Password
+                <span>Password</span>
                 <input
                   type="password"
                   value={p}
@@ -113,58 +133,44 @@ export const App: React.FC = () => {
                   autoComplete="current-password"
                 />
               </label>
-              <button type="submit">Login</button>
+              <button type="submit" className="btn-primary">
+                Sign in
+              </button>
             </form>
           ) : (
             <div>
-              <p>
-                Signed in as <b>{me.username}</b> ({me.role}, id {me.id})
+              <p className="welcome">
+                Welcome back, <b>{me.username}</b> ({me.role})
               </p>
-              <button type="button" onClick={() => void loadBooks()}>
-                Refresh catalog
-              </button>{" "}
-              <button type="button" onClick={() => void logout()}>
-                Logout
+              <button type="button" className="btn-ghost" onClick={() => void logout()}>
+                Sign out
               </button>
             </div>
           )}
-          <h3>Register (SQLi sink path in backend register)</h3>
+          <h3 className="subh">New here?</h3>
+          <p className="small muted">Create a member id—the shopkeeper files it the old-fashioned way.</p>
           <form onSubmit={register} className="form">
             <input
-              placeholder="new username"
+              className="inline"
+              placeholder="Choose a username"
               value={regU}
               onChange={(e) => setRegU(e.target.value)}
             />
             <input
+              className="inline"
               type="password"
-              placeholder="new password"
+              placeholder="Password"
               value={regP}
               onChange={(e) => setRegP(e.target.value)}
             />
-            <button type="submit">Register</button>
+            <button type="submit" className="btn-ghost small-btn">
+              Register
+            </button>
           </form>
-        </div>
-        <div className="card grow">
-          <h2>Catalog (GET /api/books)</h2>
-          {books == null && <p>Load session then refresh — or use legacy HTML at <code>/</code></p>}
-          {books && (
-            <ul className="grid">
-              {books.map((b) => (
-                <li key={b.id} className="tile">
-                  <div className="t">{b.title}</div>
-                  <div className="a">{b.author}</div>
-                  <div className="c">{b.category}</div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        </aside>
       </div>
-      <p className="foot">
-        Extra signals: <a href="/api/exposed/users">/api/exposed/users</a>,{" "}
-        <a href='/api/users?q="'>/api/users?q= (SQLi)</a>, <a href="/sca">SCA</a>{" "}
-        <a href="/sast/index">SAST</a> — or use the <a href="/">legacy</a> page.
-      </p>
+
+      <footer className="subfoot">Curbside · special orders · gift wrap when we are not too slammed.</footer>
     </div>
   );
 };

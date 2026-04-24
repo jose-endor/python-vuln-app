@@ -23,7 +23,7 @@
    export INVENTORY_DB_PATH=./data/inventory.db
    ```
 
-   The first time the app starts, it **seeds** a demo inventory (realistic mix of ~18 titles) into an empty database. If you still see the old two-row sample, stop the app, delete the SQLite file, and start again to pick up the new catalog and schema.
+   On first start with an empty database, the app **imports** rows from `data/inventory.json` and `data/users.json`. If you have an old SQLite file, remove it to re-seed, or run against Postgres in Docker.
 
 3. **Start the app** (listens on **127.0.0.1:3333** unless `PORT` is set)
 
@@ -31,7 +31,7 @@
    python -m run
    ```
 
-4. **Open the UI:** [http://127.0.0.1:3333/](http://127.0.0.1:3333/) for the legacy Jinja home page, or the **React 17 + TypeScript** app at [http://127.0.0.1:3333/app](http://127.0.0.1:3333/app) (build with `cd frontend && npm ci && npm run build` before running, or use Docker, which bakes the SPA in). The SPA supports **register / login** against the database (passwords stored **in cleartext** on purpose). Seeded users: `admin` / `admin` and `demo` / `demo`. Other one‑click examples: `/sca` and `/sast/…`.
+4. **Open the shop:** the floor display at [http://127.0.0.1:3333/](http://127.0.0.1:3333/) and the member view at [http://127.0.0.1:3333/app](http://127.0.0.1:3333/app) (Vite 2 + React 17 + TS; build with `cd frontend && npm ci && npm run build` locally, or use Docker, which bakes the SPA in). Seeded logins are loaded from **`data/users.json`** (defaults: **admin** / **admin**, **jordan** / **sunday**, **alex** / **hunter2**). The catalog seed comes from **`data/inventory.json`**; both are read into the DB on **first** init when the DB is empty. (For evaluators: SAST/SCA stress routes are still in the **backend** — e.g. `/sast/…` and `/sca/…` — the storefront UIs are plain bookstore copy.)
 
 5. **Stop** with `Ctrl+C`.
 
@@ -51,32 +51,26 @@ docker compose up --build
 
 | What | URL / port | Notes |
 |------|------------|--------|
-| Bookstore web UI + JSON API + `/app` SPA | **http://127.0.0.1:3333/** | Same routes as the venv run; **`DATABASE_URL`** points at the Postgres service. |
-| Auth-only process (second container) | **http://127.0.0.1:5001/** | `auth-service` — `AUTH_SERVICE_MODE=1`, shared DB. |
-| Optional nginx edge | **http://127.0.0.1:8080/** | Forwards to the monolith; another image to scan. |
-| PostgreSQL | **127.0.0.1:5432** | **Weak, static password**; **5432 on the host** on purpose. Seeds `books` and `users` on first start. |
-| `psycopg2-binary` | (library) | In the image for the DB driver; in `requirements.txt` for venv parity. |
+| **One** app process (web + API + lab routes + `/app` SPA) | **http://127.0.0.1:3333/** | **`DATABASE_URL`** → Postgres; **`./data` mounted read-only** so you can edit `data/inventory.json` and `data/users.json` and wipe the DB to re-seed. |
+| PostgreSQL | **127.0.0.1:5432** | **Weak, static password**; **5432 on the host** on purpose. |
+| `psycopg2-binary` | (library) | In the image for the DB driver. |
+| Optional: second auth-only process | (manual) | `python -m run_auth` on **5001** with `AUTH_SERVICE_MODE=1` — not started by `docker compose` by default. |
+| Optional: nginx | `deploy/nginx-insecure-research.conf` | **Not** used in compose; add your own service if you want a front proxy. |
 
 **CRUD in Docker:** `GET /api/books` (search; still the **SQLi-relevant** string-built `WHERE` for vendors), `POST /api/books` (vulnerable string-built `INSERT`), and **`GET /api/books/<id>`** for a **parameterized** read of one row (more like a “real” REST read path). The UI loads the catalog from `GET /api/books` as before.
 
 **Image / compose are intentionally bad** for AppSec and compliance demos: app runs as **root**, **Postgres is exposed to the host**, **plaintext creds in `environment:`** (and extra fake API keys), `seccomp:unconfined`, `cap_add`, `extra_hosts`, no app `HEALTHCHECK`, `chmod 777` in the Dockerfile, `apt` without `clean`, legacy `requirements-sca-legacy.txt` in the image, build args that look like tokens, and more. Read the comments in `Dockerfile` and `docker-compose.yml` before changing anything.
 
-### Microservices-style services (more processes & manifests for tooling)
+### Docker layout: monolith + Postgres (compose)
 
-The stack is still one codebase, but you can point scanners at **several** listen addresses:
+- **`docker compose up --build`:** `postgres` + one **`vulnerable-bookstore`** container. No extra auth or nginx services.
+- **Seed data:** `data/inventory.json` and `data/users.json` (three accounts including **admin** / **admin**). Edit those files, reset the database volume, and start again to pick up a new first-run seed.
+- **`Dockerfile` multi‑stage:** Node **18** builds the Vite 2 + React 17 + TypeScript storefront into `static/app/`, then the Python image copies it.
+- **Evaluators only:** HTTP APIs that look less “bookstore” (`GET /api/users?…`, `/api/exposed/users` with env flag, SAST at `/sast/…`, SCA at `/sca/…`) are unchanged; they are not linked from the shop UIs.
+- **Optional:** run **`python -m run_auth`** locally for a tiny `AUTH_SERVICE_MODE=1` listen on `5001` (same codepath, not part of compose by default).
+- **Kubernetes** (`k8s/research-*.yaml`): one **bookstore** deployment + Postgres + single-host ingress (auth-only manifests removed to match compose). A deliberately bad one‑file sample is still `k8s/deployment-insecure.yaml`. **Do not** apply in production clusters.
 
-| What | Port (host) | Notes |
-|------|-------------|--------|
-| **API + labs + book CRUD + session auth** (monolith) | `3333` | `GET/POST` books, SCA/SAST, `/app` SPA, `/api/auth/*` on the same process. `BIND_ALL=1` in compose for `0.0.0.0` inside the container. |
-| **Auth-only** “microservice” (same image, `AUTH_SERVICE_MODE=1`) | `5001` | Only auth routes + `GET /health`, `GET /readyz` — extra dependency graph, SBOM, and DAST target without shipping the whole lab surface. `python -m run_auth` |
-| **Postgres** | `5432` | Shared by both app processes; `users` and `books` tables, seed data on init. |
-| **Optional edge** (nginx → monolith) | `8080` | `edge-nginx` proxies to the monolith; extra container image, volume‑mounted `deploy/nginx-insecure-research.conf`. |
-
-The `Dockerfile` is **multi‑stage** (Node **18** builds the Vite 2 + React 17 + TypeScript 4.9 app into `static/app/`, then the Python image copies it). User CRUD‑ish flows include: **register**, **list users** (`GET /api/users?…` — SQLi‑ready `LIKE` builder), and **`GET /api/exposed/users`** when `ALLOW_EXPOSED_USERS=1` (dumps creds for abuse‑case tools).
-
-**Kubernetes:** multi‑file example manifests live under `k8s/`: `00-research-namespace.yaml` first, then ConfigMap, Secrets, Postgres, **bookstore** Deployment/Service, **auth** Deployment/Service, and an **Ingress** with research‑only annotations. A deliberately extreme one‑file sample remains as `k8s/deployment-insecure.yaml` for policy demos. **Do not** apply any of this to a real cluster without isolating a lab namespace.
-
-**Apply (lab only):** `kubectl apply -f k8s/00-research-namespace.yaml` then `kubectl apply -f k8s/research-*.yaml` — set the `image:` in `k8s/research-bookstore-deployment.yaml` and `k8s/research-auth-deployment.yaml` to an image you built and loaded into the cluster.
+**Apply (lab only):** `kubectl apply -f k8s/00-research-namespace.yaml` and `kubectl apply -f k8s/research-*.yaml` — set `image:` in `k8s/research-bookstore-deployment.yaml` to a built image.
 
 ---
 
@@ -165,8 +159,8 @@ What to point CIS / Trivy / KSPM / kube‑linters at in **this** repo (details a
 | 11 | `extra_hosts` (suspicious override pattern) | `extra_hosts` |
 | 12 | Plaintext env blocks for service keys in compose | `API_KEY_CART=…` |
 | 13 | Very high ulimits (DoS / blast‑radius in some baselines) | `ulimits.nproc` |
-| 14 | Optional **third** service image (nginx) | `edge-nginx` in `docker-compose.yml` |
-| 15 | Volume‑mount of permissive `nginx` config on edge | `deploy/nginx-insecure-research.conf` |
+| 14 | Optional unmounted nginx recipe (not in compose) | `deploy/nginx-insecure-research.conf` |
+| 15 | `docker compose` **bind‑mounts** `./data` into the app | Lets you change JSON seed files in place (still need empty DB to reapply seed) |
 
 (Use your vendor’s “policy / benchmark” name when you file tickets — the exact rule IDs differ.)
 

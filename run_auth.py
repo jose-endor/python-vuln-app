@@ -1,4 +1,5 @@
-# RESEARCH: second process / container — auth-only microservice (same code + DB, extra ports & graphs).
+# RESEARCH: optional second process for folks who *really* need a small attack surface in a second terminal.
+# Default Docker story is a single monolith; run this by hand: `python -m run_auth` (port 5001 by default).
 import os
 
 os.environ.setdefault("AUTH_SERVICE_MODE", "1")

@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "users": [
+    { "username": "admin", "password": "admin", "role": "admin" },
+    { "username": "jordan", "password": "sunday", "role": "staff" },
+    { "username": "alex", "password": "hunter2", "role": "user" }
+  ]
+}

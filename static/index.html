@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Stack &amp; Spine — local bookstore (research)</title>
+  <title>Stack &amp; Spine — Books &amp; gifts</title>
   <style>
     :root {
       --paper: #faf7f2;
@@ -13,8 +13,6 @@
       --line: #e2dcd4;
       --accent: #2a5a47;
       --accent-hover: #1d4033;
-      --rust: #8b4514;
-      --code: #f0ebe4;
       --shadow: 0 4px 20px rgba(20, 15, 10, 0.07);
       --radius: 10px;
       --font: ui-sans-serif, "Segoe UI", system-ui, sans-serif;
@@ -32,28 +30,19 @@
     a { color: var(--accent); }
     a:hover { color: var(--accent-hover); }
     .wrap { max-width: 1120px; margin: 0 auto; padding: 0 1.25rem 2.5rem; }
-
     .site-header {
       background: var(--card);
       border-bottom: 1px solid var(--line);
       box-shadow: 0 1px 0 rgba(255,255,255,0.8) inset;
     }
-    .site-header .inner { max-width: 1120px; margin: 0 auto; padding: 1.5rem 1.25rem 1.25rem; }
+    .site-header .inner { max-width: 1120px; margin: 0 auto; padding: 1.5rem 1.25rem 1.25rem; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
     .wordmark { font-family: var(--serif); font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em; margin: 0; color: var(--ink); }
-    .tagline { margin: 0.35rem 0 0; font-size: 0.95rem; color: var(--muted); }
-    .alert {
-      display: flex; align-items: flex-start; gap: 0.75rem;
-      background: #fef6f0; border: 1px solid #f0d0c0; color: #6b2e2a;
-      padding: 0.75rem 1rem; border-radius: var(--radius); font-size: 0.9rem; margin: 1rem 0 0;
-    }
-    .alert strong { display: block; }
-
-    h2 {
-      font-family: var(--serif); font-size: 1.25rem; font-weight: 600;
-      margin: 2rem 0 0.75rem; color: var(--ink);
-    }
+    .tagline { margin: 0.35rem 0 0; font-size: 0.95rem; color: var(--muted); max-width: 26rem; }
+    .header-links { font-size: 0.9rem; }
+    .header-links a { margin-left: 1rem; }
+    h2 { font-family: var(--serif); font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem; color: var(--ink); }
+    .h2row { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
     h2 .meta { font-family: var(--font); font-weight: 500; font-size: 0.8rem; color: var(--muted); margin-left: 0.4rem; }
-
     .search-bar {
       display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center;
       background: var(--card); padding: 1rem; border-radius: var(--radius);
@@ -67,14 +56,11 @@
     }
     .search-bar .btn:hover, .form-grid .btn:hover { background: var(--accent-hover); }
     .search-bar .btn-ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); }
-    .search-bar .btn-ghost:hover { background: var(--code); }
+    .search-bar .btn-ghost:hover { background: #f0ebe4; }
     .hint { font-size: 0.85rem; color: var(--muted); margin: 0.5rem 0 0; }
-    .hint code { background: var(--code); padding: 0.1em 0.35em; border-radius: 3px; font-size: 0.88em; }
-
     .catalog { margin-top: 1rem; }
     .book-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
       gap: 1.1rem; list-style: none; margin: 0; padding: 0;
     }
     .book-card {
@@ -96,7 +82,6 @@
     .book-author em { font-style: normal; color: var(--ink); }
     .book-isbn { margin: 0; font-size: 0.75rem; color: #8a857e; }
     .book-blurb { margin: 0.3rem 0 0; font-size: 0.82rem; color: var(--muted); line-height: 1.45; flex: 1; }
-
     .form-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
       gap: 0.65rem; background: var(--card); padding: 1rem; border-radius: var(--radius);
@@ -108,174 +93,69 @@
     }
     .form-grid textarea { min-height: 3.5rem; resize: vertical; }
     .form-row-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
-
-    pre {
-      background: var(--code); padding: 0.75rem 1rem; border-radius: 8px; overflow: auto; font-size: 0.8rem;
-      max-height: 14rem; white-space: pre-wrap; word-break: break-word; border: 1px solid var(--line);
-    }
-
-    details.labs {
-      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-      box-shadow: var(--shadow); margin: 1.5rem 0; overflow: hidden;
-    }
-    details.labs > summary {
-      list-style: none; cursor: pointer; padding: 0.9rem 1.1rem; font-weight: 600;
-      display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
-      user-select: none; font-size: 0.95rem;
-    }
-    details.labs > summary::-webkit-details-marker { display: none; }
-    details.labs > summary::after { content: "▸"; font-size: 0.75rem; color: var(--muted); }
-    details.labs[open] > summary::after { content: "▾"; }
-    .lab-inner { padding: 0 1.1rem 1.1rem; border-top: 1px solid var(--line); }
-    .lab-block { margin-top: 1.1rem; }
-    .lab-block h3 { font-size: 0.9rem; margin: 0 0 0.4rem; color: var(--rust); font-weight: 600; }
     .status-bar { min-height: 1.2em; font-size: 0.8rem; color: var(--muted); margin-top: 0.35rem; }
+    .site-footer { max-width: 1120px; margin: 2.5rem auto; padding: 0 1.25rem; font-size: 0.88rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 1.25rem; }
     @media (max-width: 520px) { .wordmark { font-size: 1.4rem; } }
   </style>
 </head>
 <body>
   <header class="site-header">
     <div class="inner">
-      <h1 class="wordmark">Stack &amp; Spine</h1>
-      <p class="tagline">Independent books — with a full tech &amp; security shelf. (This instance is a <strong>vulnerability lab</strong>.)</p>
-      <div class="alert" role="status">
-        <div>
-          <strong>Local research use only</strong>
-          Run on <code>127.0.0.1</code> in a disposable environment. Do not expose to the network or use real data.
-        </div>
+      <div>
+        <h1 class="wordmark">Stack &amp; Spine</h1>
+        <p class="tagline">Fiction, nonfiction, and the odd manual—orders &amp; holds at the front desk. Coffee smells optional.</p>
+      </div>
+      <div class="header-links">
+        <a href="/app">Member sign-in</a>
+        <a href="mailto:orders@stackandspine.example">Email us</a>
       </div>
     </div>
   </header>
 
   <main class="wrap">
-    <h2 id="catalog-heading">Catalog <span class="meta" id="catalog-count"></span></h2>
-    <div class="search-bar" role="search" aria-label="Search inventory">
+    <h2 class="h2row" id="catalog-heading">Browse the floor <span class="meta" id="catalog-count"></span></h2>
+    <div class="search-bar" role="search" aria-label="Search our shelves">
       <input type="search" id="q" placeholder="Title or keyword" autocomplete="off" />
       <input type="search" id="author" placeholder="Author" autocomplete="off" />
       <button type="button" class="btn" id="search">Search</button>
       <button type="button" class="btn-ghost" id="clear-search">Show all</button>
     </div>
-    <p class="hint">SAST: search still flows <code>search_pipeline</code> → <code>db_sink</code> (CWE-89). Single-item read: <a id="a-onebook" target="_blank" rel="noopener"><code>GET /api/books/1</code></a> (parameterized, not the injectable list path). In <strong>docker compose</strong>, inventory lives in <strong>PostgreSQL</strong> (see README); this page uses the same JSON API.</p>
-    <pre id="out-search" aria-label="raw search API response" hidden></pre>
+    <p class="hint">Tip: combine title and author to narrow a crowded shelf.</p>
     <div class="status-bar" id="catalog-status" aria-live="polite">Loading…</div>
     <section class="catalog" aria-labelledby="catalog-heading">
       <ul class="book-grid" id="catalog"></ul>
     </section>
 
-    <h2>Add a listing <span class="meta">(same vulnerable insert path as your vendor traces)</span></h2>
+    <h2>Staff: add a listing</h2>
     <div class="form-grid" id="add-form">
-      <label>Title <input type="text" id="title" name="title" placeholder="e.g. Unit Testing Principles" /></label>
+      <label>Title <input type="text" id="title" name="title" placeholder="e.g. The Remains of the Day" /></label>
       <label>Author <input type="text" id="bauthor" name="author" placeholder="Author" /></label>
       <label>ISBN <input type="text" id="isbn" name="isbn" placeholder="978-…" /></label>
-      <label>Category <input type="text" id="category" name="category" placeholder="Fiction, Software, …" value="Fiction" /></label>
-      <label style="grid-column:1/-1">Short blurb
-        <textarea id="summary" name="summary" placeholder="One or two lines for the card…"></textarea>
+      <label>Category <input type="text" id="category" name="category" placeholder="Fiction, Travel, …" value="Fiction" /></label>
+      <label style="grid-column:1/-1">Jacket copy
+        <textarea id="summary" name="summary" placeholder="A short description for the shelf talker."></textarea>
       </label>
-      <label>Cover path (under <code>/static</code>) <input type="text" id="cover" name="cover" value="covers/default.png" /></label>
+      <label>Cover image path (under <code style="font-size:0.85em">/static</code>) <input type="text" id="cover" name="cover" value="covers/default.png" /></label>
       <div class="form-row-actions">
-        <button type="button" class="btn" id="create">Add to catalog</button>
-        <span class="hint" style="margin:0">POST <code>/api/books</code> → <code>mutate_sink</code> (CWE-89)</span>
+        <button type="button" class="btn" id="create">Add to floor display</button>
       </div>
     </div>
-    <pre id="out-create" aria-label="add book response"></pre>
-
-    <details class="labs">
-      <summary>AppSec research &amp; lab tools (backup, ReDoS, templates, SCA, SAST stress routes…)</summary>
-      <div class="lab-inner">
-        <div class="lab-block">
-          <h3>3. Backup — command sink (CWE-78)</h3>
-          <div class="form-grid" style="grid-template-columns:1fr auto;">
-            <label>Label <input type="text" id="blabel" value="backup" /></label>
-            <div class="form-row-actions" style="align-self:end">
-              <button type="button" class="btn" id="backup">POST /util/backup</button>
-            </div>
-          </div>
-          <pre id="out-backup"></pre>
-        </div>
-        <div class="lab-block">
-          <h3>4. ReDoS (CWE-1333) — can hang on bad inputs</h3>
-          <div class="form-grid" style="grid-template-columns:1fr 6rem auto">
-            <label>Pattern <input type="text" id="repat" value="(a+)+$" /></label>
-            <label>String size <input type="text" id="siz" value="8000" inputmode="numeric" /></label>
-            <div class="form-row-actions" style="align-self:end">
-              <button type="button" class="btn" id="redos">Run</button>
-            </div>
-          </div>
-          <pre id="out-redos"></pre>
-        </div>
-        <div class="lab-block">
-          <h3>5. Markdown → HTML (CWE-79 chain)</h3>
-          <textarea id="mdin" rows="4" style="width:100%; font:inherit; padding:0.5rem; border:1px solid var(--line); border-radius:6px" placeholder="Markdown"># On the shelf
-
-Try inline HTML: &lt;em&gt;emphasis&lt;/em&gt;</textarea>
-          <p style="margin:0.5rem 0">
-            <button type="button" class="btn" id="mdgo">Render in new tab</button>
-            <code style="font-size:0.8em">POST /lab/render_markdown</code>
-          </p>
-        </div>
-        <div class="lab-block">
-          <h3>6. Indirect bridge (dispatch → multiple sinks)</h3>
-          <div class="form-grid" style="grid-template-columns: auto 1fr; align-items:end">
-            <label>kind
-              <select id="bkind" style="font:inherit;padding:0.45rem;border:1px solid var(--line);border-radius:6px">
-                <option>markdown</option>
-                <option>fragment</option>
-              </select>
-            </label>
-            <div class="form-row-actions" style="justify-content:flex-end">
-              <button type="button" class="btn" id="bgo">POST /util/bridge</button>
-            </div>
-          </div>
-        </div>
-        <div class="lab-block">
-          <h3>7. One-click</h3>
-          <ul>
-            <li><a id="a-preview" target="_blank" rel="noopener">SSTI /admin/preview</a> — <code>7*7</code> style</li>
-            <li><a id="a-echo" target="_blank" rel="noopener">Reflected /echo (XSS demo)</a></li>
-            <li><a id="a-fetch" target="_blank" rel="noopener">SSRF /util/fetch</a> → <code>/api/books</code></li>
-            <li><a id="a-curve" target="_blank" rel="noopener">/util/curve</a> · <a id="a-seal" target="_blank" rel="noopener">/util/seal</a></li>
-          </ul>
-        </div>
-        <div class="lab-block">
-          <h3>8. SCA — <code>GET /sca</code> keys, <code>/sca/run?k=…</code></h3>
-          <p><a id="a-sca" target="_blank" rel="noopener">List keys</a> · <a id="a-sca-wz" target="_blank" rel="noopener">e.g. werkzeug</a></p>
-        </div>
-        <div class="lab-block" style="margin-bottom:0">
-          <h3>9. SAST stress — <a id="a-sast" target="_blank" rel="noopener">/sast/index</a></h3>
-          <p><a id="a-sast-ev" target="_blank" rel="noopener">Merged eval sample</a></p>
-        </div>
-      </div>
-    </details>
   </main>
+
+  <footer class="site-footer">
+    Open most days, ten to six. Curbside pickup and special orders with a smile.
+    <br />Member pricing at <a href="/app">/app</a>.
+  </footer>
 
   <script>
     (function () {
       const $ = (id) => document.getElementById(id);
       const catalog = $("catalog");
-
-      function setLinks() {
-        const o = window.location.origin;
-        const port = window.location.port || (window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost" ? "3333" : "");
-        const h = "http://127.0.0.1" + (port ? ":" + port : "");
-        const set = (id, path) => { const el = $(id); if (el) el.href = o + path; };
-        set("a-onebook", "/api/books/1");
-        set("a-preview", "/admin/preview?template=" + encodeURIComponent("{{7*7}}"));
-        set("a-echo", "/echo?q=" + encodeURIComponent("<b>xss</b>"));
-        set("a-fetch", "/util/fetch?url=" + encodeURIComponent(h + "/api/books"));
-        set("a-curve", "/util/curve");
-        set("a-seal", "/util/seal?q=demo");
-        set("a-sca", "/sca");
-        set("a-sca-wz", "/sca/run?k=werkzeug");
-        set("a-sast", "/sast/index");
-        set("a-sast-ev", "/sast/merged_eval?p1=1%2B&p2=1&p3=");
-      }
-
       const coverSrc = (path) => {
         const p = (String(path || "").replace(/^\s+|\s+$/g, "")) || "covers/default.png";
         if (p.startsWith("/static/") || p.startsWith("http")) return p.indexOf("http") === 0 ? p : p;
         return "/static/" + p.replace(/^static\//, "");
       };
-
       function card(book) {
         const li = document.createElement("li");
         li.className = "book-card";
@@ -310,7 +190,6 @@ Try inline HTML: &lt;em&gt;emphasis&lt;/em&gt;</textarea>
         li.append(cov, body);
         return li;
       }
-
       async function loadCatalog() {
         const qs = new URLSearchParams();
         const qv = $("q").value.trim();
@@ -318,37 +197,25 @@ Try inline HTML: &lt;em&gt;emphasis&lt;/em&gt;</textarea>
         if (qv) qs.set("q", qv);
         if (av) qs.set("author", av);
         $("catalog-status").textContent = "Loading…";
-        const outS = (t) => {
-          const n = $("out-search");
-          n.textContent = t;
-          n.hidden = false;
-        };
         try {
           const r = await fetch("/api/books?" + qs.toString());
           const raw = await r.text();
-          outS(r.status + " " + raw);
           const list = JSON.parse(raw);
           $("catalog-count").textContent = "— " + list.length + " title" + (list.length === 1 ? "" : "s");
           catalog.replaceChildren();
           for (const b of list) catalog.appendChild(card(b));
-          $("catalog-status").textContent = "Showing " + list.length + " results.";
+          $("catalog-status").textContent = "Showing " + list.length + " result" + (list.length === 1 ? "" : "s") + ".";
         } catch (e) {
-          $("catalog-status").textContent = "Error loading catalog.";
-          outS("error: " + (e && e.message));
+          $("catalog-status").textContent = "We couldn't load the catalog. Try again in a moment.";
         }
       }
-
       function init() {
-        setLinks();
         loadCatalog();
       }
       if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
       else init();
-
       $("search").onclick = loadCatalog;
       $("clear-search").onclick = function () { $("q").value = ""; $("author").value = ""; loadCatalog(); };
-
-      const outC = (id) => (t) => { const n = $(id); n.textContent = t; };
       $("create").onclick = async () => {
         const r = await fetch("/api/books", {
           method: "POST",
@@ -362,33 +229,8 @@ Try inline HTML: &lt;em&gt;emphasis&lt;/em&gt;</textarea>
             summary: $("summary").value
           })
         });
-        outC("out-create")((r.status) + " " + (await r.text()));
         if (r.ok) loadCatalog();
-      };
-      $("backup").onclick = async () => {
-        const r = await fetch("/util/backup", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ label: $("blabel").value })
-        });
-        outC("out-backup")((r.status) + " " + (await r.text()));
-      };
-      $("redos").onclick = async () => {
-        const r = await fetch("/lab/redos?" + new URLSearchParams({ pattern: $("repat").value, size: $("siz").value }));
-        $("out-redos").textContent = JSON.stringify(await r.json(), null, 2);
-      };
-      $("mdgo").onclick = async () => {
-        const r = await fetch("/lab/render_markdown", { method: "POST", body: $("mdin").value, headers: { "Content-Type": "text/plain" } });
-        const t = await r.text();
-        const w = window.open("about:blank", "_blank");
-        if (w) { w.document.write(t); w.document.close(); }
-      };
-      $("bgo").onclick = async () => {
-        const k = $("bkind").value;
-        const r = await fetch("/util/bridge?kind=" + encodeURIComponent(k), { method: "POST", body: $("mdin").value, headers: { "Content-Type": "text/plain" } });
-        const t = await r.text();
-        const w = window.open("about:blank", "_blank");
-        if (w) { w.document.write(t); w.document.close(); }
+        else alert("Couldn't add that title — check with the manager.");
       };
     })();
   </script>

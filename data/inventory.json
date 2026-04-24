@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "books": [
+    {
+      "title": "The Nightingale",
+      "author": "Kristin Hannah",
+      "isbn": "978-0-31-234454-2",
+      "cover_path": "covers/default.png",
+      "category": "Fiction",
+      "summary": "Two sisters in occupied France—book club favorite and staff pick for historical fiction."
+    },
+    {
+      "title": "Project Hail Mary",
+      "author": "Andy Weir",
+      "isbn": "978-0-59-313520-4",
+      "cover_path": "covers/default.png",
+      "category": "Science Fiction",
+      "summary": "A lone astronaut, high stakes, and a lot of heart; great for long reading sessions."
+    },
+    {
+      "title": "Dune",
+      "author": "Frank Herbert",
+      "isbn": "978-0-44-101359-3",
+      "cover_path": "covers/default.png",
+      "category": "Science Fiction",
+      "summary": "Politics, ecology, and destiny on a desert world—a genre-defining classic."
+    },
+    {
+      "title": "The Pragmatic Programmer",
+      "author": "David Thomas, Andrew Hunt",
+      "isbn": "978-0-13-475759-9",
+      "cover_path": "covers/default.png",
+      "category": "Software",
+      "summary": "Timeless advice on craft, from tracer bullets to keeping your knowledge portfolio sharp."
+    },
+    {
+      "title": "Security Engineering (3rd ed.)",
+      "author": "Ross Anderson",
+      "isbn": "978-1-19-124332-0",
+      "cover_path": "covers/default.png",
+      "category": "Security",
+      "summary": "How real systems fail and how to design them to be robust—reference shelf essential."
+    },
+    {
+      "title": "SQL Antipatterns",
+      "author": "Bill Karwin",
+      "isbn": "978-1-93-435655-1",
+      "cover_path": "covers/default.png",
+      "category": "Database",
+      "summary": "A practical catalog of database design mistakes and safer patterns."
+    },
+    {
+      "title": "The Mythical Man-Month",
+      "author": "Frederick P. Brooks Jr.",
+      "isbn": "978-0-20-183595-3",
+      "cover_path": "covers/default.png",
+      "category": "Software",
+      "summary": "Essays on software project management that never seem to go out of print."
+    },
+    {
+      "title": "Clean Code",
+      "author": "Robert C. Martin",
+      "isbn": "978-0-13-235088-4",
+      "cover_path": "covers/default.png",
+      "category": "Software",
+      "summary": "Naming, functions, and the habits that make code easier to change over time."
+    },
+    {
+      "title": "1984",
+      "author": "George Orwell",
+      "isbn": "978-0-45-152493-5",
+      "cover_path": "covers/default.png",
+      "category": "Fiction",
+      "summary": "A classroom staple; dystopian fiction that still starts conversations."
+    },
+    {
+      "title": "Sapiens",
+      "author": "Yuval Noah Harari",
+      "isbn": "978-0-06-231610-3",
+      "cover_path": "covers/default.png",
+      "category": "History",
+      "summary": "A sweeping history of humankind from the cognitive revolution forward."
+    },
+    {
+      "title": "The Thursday Murder Club",
+      "author": "Richard Osman",
+      "isbn": "978-0-25-300060-0",
+      "cover_path": "covers/default.png",
+      "category": "Mystery",
+      "summary": "Retirement-home sleuths, cozy Brit wit, and very readable plotting."
+    },
+    {
+      "title": "Atomic Habits",
+      "author": "James Clear",
+      "isbn": "978-0-73-521129-2",
+      "cover_path": "covers/default.png",
+      "category": "Nonfiction",
+      "summary": "Small, repeatable changes that add up; displayed near the self-improvement bay."
+    },
+    {
+      "title": "The DevOps Handbook",
+      "author": "Gene Kim et al.",
+      "isbn": "978-1-94-104800-0",
+      "cover_path": "covers/default.png",
+      "category": "Software",
+      "summary": "The three ways, flow, and what high-performing technology teams practice."
+    },
+    {
+      "title": "Pride and Prejudice",
+      "author": "Jane Austen",
+      "isbn": "978-0-14-143951-8",
+      "cover_path": "covers/default.png",
+      "category": "Classics",
+      "summary": "Romance and social comedy—perennial fiction table staple."
+    },
+    {
+      "title": "Meditations",
+      "author": "Marcus Aurelius (Gregory Hays trans.)",
+      "isbn": "978-0-81-296358-5",
+      "cover_path": "covers/default.png",
+      "category": "Philosophy",
+      "summary": "Short entries from a Stoic emperor; easy to pick up between customers."
+    }
+  ]
+}

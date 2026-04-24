@@ -1,9 +1,5 @@
-# RESEARCH: full stack in Docker for AppSec / CSPM stress tests. NOT FOR PRODUCTION.
-# - PostgreSQL with a weak known password, bound to the host
-# - API monolith: http://127.0.0.1:3333
-# - Auth microservice (same image, same DB, auth-only routes): http://127.0.0.1:5001
-# - Optional edge: http://127.0.0.1:8080 (nginx → monolith) — for multi-service / ingress-like demos
-# - `docker compose up --build` to build
+# The whole band in one room: one Python process, one Postgres, zero orchestration cosplay.
+# (Optional nginx lives in deploy/ if you need to hurt yourself on purpose in prod-like demos.)
 # -----------------------------------------------------------------------------
 
 services:
@@ -25,7 +21,7 @@ services:
       retries: 30
       start_period: 4s
 
-  # Full API + labs + SCA/SAST + same-process auth + /app (React) SPA
+  # Monolith: catalog + account APIs + the usual backend demo routes, `/app` SPA, still terrible on purpose
   vulnerable-bookstore:
     build: .
     image: vulnerable-bookstore:local
@@ -35,6 +31,9 @@ services:
         condition: service_healthy
     ports:
       - "127.0.0.1:3333:3333"
+    volumes:
+      # Tweak `data/inventory.json` and `data/users.json` on the host; app reads them on empty DB init
+      - ./data:/app/data:ro
     environment:
       - DATABASE_URL=postgresql://bookstore:changeme_research_plaintext_5432@postgres:5432/bookstore
       - BOOKSTORE_SECRET_KEY=compromised-in-compose-file-RESEARCH
@@ -53,40 +52,6 @@ services:
     extra_hosts:
       - "demo.corp-scanner.evil:192.0.2.1"
     read_only: false
-
-  # Second process for microservice / SBOM / DAST targeting (auth routes + health; shared Postgres)
-  auth-service:
-    build: .
-    image: vulnerable-bookstore:local
-    user: "0:0"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    ports:
-      - "127.0.0.1:5001:5001"
-    environment:
-      - AUTH_SERVICE_MODE=1
-      - DATABASE_URL=postgresql://bookstore:changeme_research_plaintext_5432@postgres:5432/bookstore
-      - BOOKSTORE_SECRET_KEY=compromised-in-compose-file-RESEARCH
-      - FLASK_DEBUG=1
-      - PORT=5001
-      - BIND_ALL=1
-    command: ["python", "-m", "run_auth"]
-    ulimits:
-      nproc: 1048576
-    security_opt:
-      - seccomp:unconfined
-    read_only: false
-
-  # Optional: single public-like port; upstream is still the monolith
-  edge-nginx:
-    image: nginx:1.25.4-alpine
-    depends_on:
-      - vulnerable-bookstore
-    ports:
-      - "127.0.0.1:8080:80"
-    volumes:
-      - ./deploy/nginx-insecure-research.conf:/etc/nginx/conf.d/default.conf:ro
 
 volumes:
   pg_research_data: {}
