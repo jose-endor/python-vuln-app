@@ -1,0 +1,10 @@
+.venv
+.venv-tmp
+__pycache__
+*.pyc
+*.pyo
+.git
+.pytest_cache
+.mypy_cache
+*.db-journal
+data/*.db

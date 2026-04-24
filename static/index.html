@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Python Vuln Bookstore — local demo (research)</title>
+  <style>
+    :root { --fg: #1a1a1a; --muted: #555; --line: #ddd; --code: #f0f2f4; }
+    * { box-sizing: border-box; }
+    body { font-family: ui-sans-serif, system-ui, sans-serif; color: var(--fg); max-width: 50rem; margin: 0 auto; padding: 1.5rem; line-height: 1.45; }
+    h1 { font-size: 1.35rem; }
+    h2 { font-size: 1.05rem; margin-top: 1.5rem; border-bottom: 1px solid var(--line); padding-bottom: 0.25rem; }
+    .warn { color: #8a1c1c; background: #fdeaea; padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.9rem; margin: 1rem 0; }
+    .grid { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    .grid input, .grid button { font: inherit; padding: 0.4rem 0.6rem; }
+    .grid input[type="text"] { min-width: 8rem; flex: 1; }
+    button { cursor: pointer; }
+    pre { background: var(--code); padding: 0.75rem; border-radius: 6px; overflow: auto; font-size: 0.85rem; max-height: 14rem; white-space: pre-wrap; word-break: break-word; }
+    code { font-size: 0.9em; background: var(--code); padding: 0.1em 0.35em; border-radius: 3px; }
+    section { margin-bottom: 0.5rem; }
+    .hint { color: var(--muted); font-size: 0.9rem; margin: 0.4rem 0; }
+  </style>
+</head>
+<body>
+  <h1>Bookstore (intentionally vulnerable — local research)</h1>
+  <p class="warn">Use only on <strong>localhost</strong> in a throwaway venv. Not for the internet or production.</p>
+  <p>Default app URL: <code>http://127.0.0.1:3333</code> — if you use another port, update the fetches below or use your browser’s devtools to call the same origin.</p>
+
+  <h2>1. Books — search (GET)</h2>
+  <section>
+    <div class="grid">
+      <input type="text" id="q" placeholder="q (title contains)" />
+      <input type="text" id="author" placeholder="author" />
+      <button type="button" id="search">Run search</button>
+    </div>
+    <p class="hint">SAST path: <code>sources</code> → <code>search_pipeline</code> → <code>db_sink</code> (CWE-89)</p>
+    <pre id="out-search" aria-label="search output"></pre>
+  </section>
+
+  <h2>2. Books — create (POST JSON)</h2>
+  <section>
+    <div class="grid">
+      <input type="text" id="title" placeholder="title" />
+      <input type="text" id="bauthor" placeholder="author" />
+      <input type="text" id="isbn" placeholder="isbn" />
+      <input type="text" id="cover" placeholder="cover_path" value="default.png" />
+      <button type="button" id="create">Create book</button>
+    </div>
+    <p class="hint">CWE-89 in insert path: <code>mutate_sink</code></p>
+    <pre id="out-create"></pre>
+  </section>
+
+  <h2>3. Backup (POST JSON — command sink)</h2>
+  <section>
+    <div class="grid">
+      <input type="text" id="blabel" placeholder='label' value="backup" />
+      <button type="button" id="backup">POST /util/backup</button>
+    </div>
+    <pre id="out-backup"></pre>
+  </section>
+
+  <h2>4. ReDoS lab (GET)</h2>
+  <section>
+    <div class="grid">
+      <input type="text" id="repat" value="(a+)+$" style="min-width:12rem" title="pattern" />
+      <input type="text" id="siz" value="20000" title="string length" />
+      <button type="button" id="redos">Run regex match</button>
+    </div>
+    <p class="hint">May <strong>hang a few seconds</strong> in bad cases — that is the point for CWE-1333 demos. Keep size modest first (e.g. 5000).</p>
+    <pre id="out-redos"></pre>
+  </section>
+
+  <h2>5. Markdown → HTML (POST)</h2>
+  <section>
+    <p>Body sent as <code>text/plain</code> to <code>POST /lab/render_markdown</code> — response is HTML (CWE-79 chain).</p>
+    <div class="grid" style="flex-direction:column; align-items:stretch">
+      <textarea id="mdin" rows="3" style="width:100%; font:inherit" placeholder="# Hi&#10;```&#10;code&#10;```"># Title
+
+&lt;script&gt;alert(1)&lt;/script&gt; (try raw HTML in some contexts)</textarea>
+      <button type="button" id="mdgo">Render markdown in browser (opens new tab)</button>
+    </div>
+  </section>
+
+  <h2>6. Indirect bridge (POST)</h2>
+  <section>
+    <p><code>POST /util/bridge?kind=markdown</code> or <code>kind=fragment</code> — one entry, multiple sinks.</p>
+    <div class="grid">
+      <label>kind <select id="bkind"><option>markdown</option><option>fragment</option></select></label>
+      <button type="button" id="bgo">POST to bridge (preview in new tab)</button>
+    </div>
+  </section>
+
+  <h2>7. One-click test links (same host)</h2>
+  <section>
+    <ul>
+      <li><a id="a-preview" target="_blank" rel="noopener">/admin/preview?template=… (SSTI)</a> — <code>49</code> from a Jinja expression (e.g. <code>7*7</code> in the template param)</li>
+      <li><a id="a-echo" target="_blank" rel="noopener">/echo?q=… (XSS / reflected)</a></li>
+      <li><a id="a-fetch" target="_blank" rel="noopener">/util/fetch?url=… (SSRF)</a></li>
+      <li><a id="a-curve" target="_blank" rel="noopener">/util/curve</a> · <a id="a-seal" target="_blank" rel="noopener">/util/seal</a> (ecdsa + cryptography / secrets story)</li>
+    </ul>
+  </section>
+
+  <h2>8. SCA — dependency call graph (20+ keys)</h2>
+  <section>
+    <p>Each <code>k</code> calls a different third-party entry point. List keys: <a id="a-sca" target="_blank" rel="noopener">/sca</a>. Run one: <a id="a-sca-wz" target="_blank" rel="noopener">/sca/run?k=werkzeug</a></p>
+  </section>
+
+  <h2>9. SAST — multi-source stress routes</h2>
+  <section>
+    <p>Index: <a id="a-sast" target="_blank" rel="noopener">/sast/index</a>. Example merged eval: <a id="a-sast-ev" target="_blank" rel="noopener">/sast/merged_eval?p1=1%2B&p2=1</a> (should return <code>2</code> in JSON).</p>
+  </section>
+
+  <script>
+    const out = (id) => { const n = document.getElementById(id); return n ? (t) => { n.textContent = t; } : () => {} };
+
+    (function setLinks() {
+      const o = window.location.origin;
+      const set = (id, path) => { const el = document.getElementById(id); if (el) el.href = o + path; };
+      set('a-preview', "/admin/preview?template=" + encodeURIComponent("{{7*7}}"));
+      set('a-echo', "/echo?q=" + encodeURIComponent("<b>xss</b>"));
+      set('a-fetch', "/util/fetch?url=" + encodeURIComponent("http://127.0.0.1" + (window.location.port?':'+window.location.port:':3333') + "/api/books"));
+      set('a-curve', "/util/curve");
+      set('a-seal', "/util/seal?q=demo");
+      set('a-sca', o + "/sca");
+      set('a-sca-wz', o + "/sca/run?k=werkzeug");
+      set('a-sast', o + "/sast/index");
+      set('a-sast-ev', o + "/sast/merged_eval?p1=1%2B&p2=1&p3=");
+    })();
+
+    document.getElementById("search").onclick = async () => {
+      const q = new URLSearchParams();
+      const v = document.getElementById("q").value;
+      const a = document.getElementById("author").value;
+      if (v) q.set("q", v);
+      if (a) q.set("author", a);
+      const r = await fetch("/api/books?" + q.toString());
+      out("out-search")((r.status) + " " + await r.text());
+    };
+    document.getElementById("create").onclick = async () => {
+      const r = await fetch("/api/books", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: document.getElementById("title").value,
+          author: document.getElementById("bauthor").value,
+          isbn: document.getElementById("isbn").value,
+          cover_path: document.getElementById("cover").value
+        })
+      });
+      out("out-create")((r.status) + " " + await r.text());
+    };
+    document.getElementById("backup").onclick = async () => {
+      const r = await fetch("/util/backup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label: document.getElementById("blabel").value })
+      });
+      out("out-backup")((r.status) + " " + await r.text());
+    };
+    document.getElementById("redos").onclick = async () => {
+      const pat = document.getElementById("repat").value;
+      const size = document.getElementById("siz").value;
+      const r = await fetch("/lab/redos?" + new URLSearchParams({ pattern: pat, size }));
+      out("out-redos")(JSON.stringify(await r.json(), null, 2));
+    };
+    document.getElementById("mdgo").onclick = async () => {
+      const r = await fetch("/lab/render_markdown", { method: "POST", body: document.getElementById("mdin").value, headers: { "Content-Type": "text/plain" } });
+      const t = await r.text();
+      const w = window.open("about:blank", "_blank");
+      if (w) { w.document.write(t); w.document.close(); }
+    };
+    document.getElementById("bgo").onclick = async () => {
+      const k = document.getElementById("bkind").value;
+      const r = await fetch("/util/bridge?kind=" + encodeURIComponent(k), { method: "POST", body: document.getElementById("mdin").value, headers: { "Content-Type": "text/plain" } });
+      const t = await r.text();
+      const w = window.open("about:blank", "_blank");
+      if (w) { w.document.write(t); w.document.close(); }
+    };
+  </script>
+</body>
+</html>

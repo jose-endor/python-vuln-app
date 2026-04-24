@@ -1,0 +1,33 @@
+# Intentional misconfigurations for local container and supply-chain / benchmark demos.
+# RESEARCH ONLY. Run: docker compose up --build
+#
+# 1) Plaintext secrets in the compose file (CWE-260 class misconfigs)
+# 2) process runs as root
+# 3) seccomp fully relaxed
+# 4) extra_hosts mapping (suspicious DNS override pattern)
+# 5) ulimits set high
+# 6) No healthcheck, no read-only rootfs, no user namespace
+# 7) privileged caps available at runtime (all caps)
+# 8) Publishes port on all interfaces by default
+services:
+  vulnerable-bookstore:
+    build: .
+    image: vulnerable-bookstore:local
+    user: "0:0"
+    ports:
+      - "127.0.0.1:3333:3333"
+    environment:
+      - BOOKSTORE_SECRET_KEY=compromised-in-compose-file-RESEARCH
+      - API_KEY_CART=sk-demo-static-key-RESEARCH
+      - FLASK_DEBUG=1
+      - PORT=3333
+    ulimits:
+      nproc: 1048576
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - NET_ADMIN
+      - SYS_PTRACE
+    extra_hosts:
+      - "demo.corp-scanner.evil:192.0.2.1"
+    read_only: false

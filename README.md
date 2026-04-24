@@ -1,0 +1,144 @@
+# Python Vulnerable Bookstore (Research Only)
+
+**Run only on your machine (for example `http://127.0.0.1:3333`) inside a throwaway venv or container.** This app is intentionally unsafe for **stress‑testing SCA, SAST, secret scanners, and container compliance tools**.
+
+---
+
+## Quick start (3 steps)
+
+1. **Create a virtual environment and install dependencies**
+
+   ```bash
+   cd python-vuln-app
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+2. **(Optional) Put the SQLite file where you like**
+
+   ```bash
+   export INVENTORY_DB_PATH=./data/inventory.db
+   ```
+
+3. **Start the app** (listens on **127.0.0.1:3333** unless `PORT` is set)
+
+   ```bash
+   python -m run
+   ```
+
+4. **Open the UI:** [http://127.0.0.1:3333/](http://127.0.0.1:3333/) — the page lists one‑click examples for the older flows; new stress routes are under `/sca` and `/sast/…`.
+
+5. **Stop** with `Ctrl+C`.
+
+**Change port:** `export PORT=9000` (then re‑run `python -m run`).
+
+---
+
+## Docker (optional, heavier SCA / container noise)
+
+**Requires [Docker](https://docs.docker.com/get-docker/) and Compose** on your machine. From the project root:
+
+```bash
+docker compose up --build
+```
+
+Then open **http://127.0.0.1:3333/** (the compose file maps that port on the **host** loopback only). The image installs **`requirements-sca-legacy.txt`** (Python **3.10** in the Dockerfile) for older, noisier dependency **SBOMs** than the main `requirements.txt` line you use in a venv on newer Python.
+
+**Container notes:** the Dockerfile and `docker-compose.yml` are *deliberately* bad (root user, build args that look like tokens, `seccomp:unconfined`, extra packages without `apt` cleanup, `chmod 777` on a data path, no `HEALTHCHECK`, secrets in `environment:`, and more). The comments inside those files call out what typical CIS / KSPM / Trivy‑style tools look for. Adjust nothing if your goal is benchmark realism.
+
+---
+
+## 1) SCA — 10+ reachable dependency call sites (SBOM / reachability)
+
+Each row is a **different package** with an **intentionally dated** line in `requirements.txt` (or `requirements-sca-legacy.txt` in Docker). The code **imports and calls** the library in `bookstore/sinks/sca_stubs.py` and exposes it from **`GET /sca/run?k=…`**.
+
+| # | `k` (for `/sca/run?k=`) | Package (examples) | Notes |
+|---|------------------------|--------------------|--------|
+| 1 | `urllib3` | urllib3 | `PoolManager().request` |
+| 2 | `requests` | requests | `requests.get` |
+| 3 | `certifi` | certifi | `certifi.where` |
+| 4 | `idna` | idna | `idna.encode` |
+| 5 | `charset_normalizer` | charset-normalizer | `from_bytes` (alias `charset_normalizer`) |
+| 6 | `pyyaml` | PyYAML | `yaml.safe_load` |
+| 7 | `pillow` | Pillow | `PIL.Image.open` |
+| 8 | `lxml` | lxml | `lxml.etree.fromstring` |
+| 9 | `markdown` | Python‑Markdown | `markdown.markdown` |
+| 10 | `ecdsa` | ecdsa | signing key / curve (see stub) |
+| 11 | `cryptography_fernet` | cryptography | `Fernet` (also wired from `bookstore/sinks/crypto_sink.py`) |
+| 12 | `paramiko` | paramiko | host key / RSA (SSH stack) |
+| 13 | `redis` | redis | `from_url` client pool (no local Redis required for a graph hit) |
+| 14 | `pycryptodomex` | pycryptodomex | `ARC4` |
+| 15 | `jose` | python‑jose | unverified header parse (JWT) |
+| 16 | `httpx` | httpx | `AsyncClient` + `asyncio.run` (async HTTP different from `requests` graph) |
+| 17 | `protobuf` | protobuf | `empty_pb2.Empty` `Serialize` / `Parse` |
+| 18 | `ujson` | ujson | C JSON encode/decode |
+| 19 | `werkzeug` | Werkzeug | `gen_salt` |
+| 20 | `jinja2` | Jinja2 | small template (escape on) |
+| 21 | `itsdangerous` | itsdangerous | `URLSafeSerializer` |
+| 22 | `click` | click | `click.unstyle(click.style(…))` |
+| 23 | `blinker` | blinker | `blinker.signal` |
+| 24 | `flask_markupsafe` | Flask, MarkupSafe | version / Markup (both appear in the graph) |
+
+**Discovery:** `GET /sca` returns the list of `k` values. Many handlers accept a query like `u=` (URL), `b64=`, `md=`, `t=`, or `json=`; see the handler map in `bookstore/routes/sca_demos.py`. **You should expect CVEs / advisories to vary** by the exact version your resolver installs; compare **host venv** vs **Docker** legacy file.
+
+**Also in the app (used on non‑`/sca` paths):** **Flask**, **Werkzeug**, **Jinja2**, **PyYAML** (`unsafe_load` in `bookstore/sinks/yaml_sink.py` — SAST as well as SCA), **Pillow** (`read_cover_meta`), **lxml** / **markdown** in labs and `/util/bridge`, **cryptography** and **ecdsa** on `/util/*` curve/seal examples.
+
+---
+
+## 2) SAST — 10+ “hard” issues (multi‑source, propagation, indirect sinks)
+
+Many findings are **CWE**‑shaped. Flows on purpose cross **`sources` → `propagation` / `sync` → `sinks`**, and several routes merge **more than one** of `{query, JSON, headers, raw body, cookies}` so shallow single‑file regex engines miss the sink.
+
+| # | Theme / CWE (typical) | Why it is “harder” | Entry point (examples) |
+|---|------------------------|--------------------|------------------------|
+| 1 | Merged `eval` (CWE‑95) | `strip_noise` on one operand + ordered merge of `p1`…`p3` | `GET /sast/merged_eval?p1=&p2=&p3=` |
+| 2 | Pickle / merged b64 (CWE‑502) | two base64 halves concatenated pre‑`loads` | `GET /sast/merged_pickle?a=&b=` |
+| 3 | `marshal` loads (CWE‑502) | `interleave` reorders two halves of one blob | `GET /sast/merged_marshal?a&b&order=` |
+| 4 | `subprocess` + shell (CWE‑78) | JSON `a` / `b` joined at the sink (no route‑local quote) | `POST /sast/merged_subprocess` body `{"a":…,"b":…}` |
+| 5 | Path / LFI (CWE‑22) | `tuple_join` of `a`,`b` plus a third `ext` segment | `GET /sast/lfi?a=&b=&ext=` |
+| 6 | Open redirect (CWE‑601) | `a` + `b` merged, passed to `redirect` | `GET /sast/redirect?a=&b=` |
+| 7 | SSTI / Jinja (CWE‑1336) | `a` + `b` + `c` merged before `from_string` | `POST /sast/merged_jinja` |
+| 8 | `lxml` on raw XML (CWE‑91 / 611 class) | POST body only | `POST /sast/lxml` |
+| 9 | `xml.etree` parse (stdlib) | same story, different module path | `POST /sast/stdlib_xml` |
+| 10 | SSRF, triple URL (CWE‑918) | `s` + `h` + `p` reassembled in one sink that calls `requests` | `GET /sast/triple_url?s=&h=&p=` |
+| 11 | SSRF, `httpx` + `asyncio.run` (CWE‑918) | **different** HTTP stack and async entry | `GET /sast/aio_merged?a&b` |
+| 12 | SSRF, `urllib.request` (CWE‑918) | stdlib client, merged URL | `GET /sast/urllib_merged?a&b` |
+| 13 | Log injection / secrets in logs (CWE‑532) | password field sent to a logger with `%r` | `POST /sast/cred_log` JSON `{"u":…,"p":…}` |
+| 14 | `getattr(__builtins__, …)` (CWE‑95 class) | indirect dynamic call | `GET /sast/builtin?n=…&c=…` |
+| 15 | `importlib` + tainted `module:attr` (CWE‑95 / 20) | dotted string split in sink | `GET /sast/import_dotted?d=…` |
+| 16 | Charset + merge (CWE‑20 chain) | base64 → `charset_normalizer` after merge (SCA+SAST) | `GET /sast/charset_chain?b64=…` |
+
+**Discoverability index:** `GET /sast/index` (JSON list of the routes above).
+
+**“Classic” flows (still in the app, multi‑file):** SQLite injection (`/api/books` — `search_pipeline` → `db_sink`), command execution (`/util/backup` → `shell_sink`), SSRF v1 (`/util/fetch` + `url_pipeline` → `http_client_sink`), SSTI admin (`/admin/preview` → `jinja_sink`), reflected XSS (`/echo` — `|safe` in a template string), `yaml.unsafe_load` on `/admin/ingest` (`yaml_sink`), ReDoS (`/lab/redos` through `regex_chain` → `regex_sink`), and indirect `/util/bridge?kind=…` (`dispatch_merge` → `markdown` / lxml `fragment`).
+
+---
+
+## 3) Container / image / compose — 10+ intentional misconfigurations
+
+What to point CIS / Trivy / KSPM / kube‑linters at in **this** repo (details also in file comments):
+
+| # | What scanners flag | Where |
+|---|----------------------|--------|
+| 1 | `USER` not dropped to a non‑privileged uid | `Dockerfile` (implicit root + compose `user: 0:0`) |
+| 2 | “Secrets” in `ENV` / `ARG` | `ARG INSECURE_BUILD_ARG`, `EXTRA_BAD_TOKEN`, `LEAKED_BUILD_ENV` |
+| 3 | `FLASK_DEBUG=1` in a shipped image | `ENV` in `Dockerfile` and compose `environment` |
+| 4 | PIP / layer hygiene (`PIP_NO_CACHE_DIR=0`, large single `COPY .`) | `Dockerfile` |
+| 5 | Stale / fat base (`python:…-slim` without an explicit hardening / refresh pass) | `FROM` line |
+| 6 | `apt` install with **no** `apt-get clean` / `rm` of `lists` | `RUN apt-get` block |
+| 7 | Over‑broad `chmod` (`777`) on a persistent directory | `chmod 777` on `/data` and `/tmp/sandbox` |
+| 8 | Extra packages in runtime (curl) | `apt-get install` |
+| 9 | No `HEALTHCHECK` | (deliberately omitted) |
+| 10 | `seccomp:unconfined` and extra `cap_add` in compose | `docker-compose.yml` `security_opt`, `cap_add` |
+| 11 | `extra_hosts` (suspicious override pattern) | `extra_hosts` |
+| 12 | Plaintext env blocks for service keys in compose | `API_KEY_CART=…` |
+| 13 | Very high ulimits (DoS / blast‑radius in some baselines) | `ulimits.nproc` |
+
+(Use your vendor’s “policy / benchmark” name when you file tickets — the exact rule IDs differ.)
+
+---
+
+## License / intent
+
+Use only for **security research** and product evaluation. Add a `LICENSE` file (for example MIT) if you need a formal license line.
