@@ -37,7 +37,7 @@
 
 **Change port:** `export PORT=9000` (then re‑run `python -m run`).
 
-**SCA / CI (`npm`, reachability):** The committed `frontend/package-lock.json` must list **`https://registry.npmjs.org/`** in `resolved` fields, not a corporate or vendor proxy (proxy URLs in the lock will often trigger **`npm ERR! 401`** in clean sandboxes). The repo includes **`frontend/.npmrc`** pinning the public registry. If your machine rewrote the lock, run: `cd frontend && rm -rf node_modules package-lock.json && npm install` (with that `.npmrc` in place) and commit the new lock.
+**SCA / CI (`npm`, reachability):** The committed `frontend/package-lock.json` must list **`https://registry.npmjs.org/`** in `resolved` fields, not a corporate or vendor proxy (proxy URLs in the lock will often trigger **`npm ERR! 401`** in clean sandboxes). The repo includes **`frontend/.npmrc`** and a root **`.npmrc`** pinning the public registry. A root **`package.json` / `package-lock.json`** pair exists only as metadata (no root JS deps); the installable app is under **`frontend/`** (`npm ci` + `npm run build` there). If your machine rewrote the lock, run: `cd frontend && rm -rf node_modules package-lock.json && npm install` and commit the new lock.
 
 ---
 

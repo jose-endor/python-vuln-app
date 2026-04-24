@@ -1,0 +1,6 @@
+{
+  "name": "python-vuln-app",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Python app; Node build + package-lock are under frontend/"
+}
