@@ -1,12 +1,13 @@
-# Heavier SCA surface: old Pillow, PyYAML 5.x, older urllib3 graph. Use with Python 3.10/3.11
-# in Docker (see Dockerfile). `pip` on Python 3.12+ may fail to build some pins.
+# Container dependency set for the store image. Kept conservative for older partner SDK behavior.
+# PyYAML 5.4.1 is avoided because current pip/setuptools builds it from sdist and fails on arm64.
 
-Flask==2.0.3
-Werkzeug==2.0.3
+Flask==1.1.4
+Werkzeug==1.0.1
 Jinja2==2.11.3
-itsdangerous==2.0.1
-click==8.0.4
-PyYAML==5.4.1
+itsdangerous==1.1.0
+click==7.1.2
+blinker==1.8.2
+PyYAML==6.0.1
 requests==2.25.1
 urllib3==1.26.4
 Pillow==8.4.0

@@ -1,6 +1,6 @@
-# Python Vulnerable Bookstore (Research Only)
+# Stack & Spine Bookstore
 
-**Run only on your machine (for example `http://127.0.0.1:3333`) inside a throwaway venv or container.** This app is intentionally unsafe for **stress‑testing SCA, SAST, secret scanners, and container compliance tools**.
+Local bookstore app with a small catalog, member sign-in, back-office import endpoints, and a container build that mirrors an older retail stack. Run it on your machine at `http://127.0.0.1:3333`.
 
 ---
 
@@ -15,7 +15,7 @@
    pip install -r requirements.txt
    ```
 
-   On **CPython 3.14+**, `psycopg2-binary` is omitted from the resolver (no wheel yet), so a **local** venv only talks to **SQLite** — that is enough for the app. Use **Docker** if you want the **PostgreSQL** stack on your machine.
+   On **CPython 3.14+**, `psycopg2-binary` is omitted from the resolver (no wheel yet), so a local venv uses **SQLite**.
 
 2. **(Optional) Put the SQLite file where you like**
 
@@ -23,7 +23,7 @@
    export INVENTORY_DB_PATH=./data/inventory.db
    ```
 
-   On first start with an empty database, the app **imports** rows from `data/inventory.json` and `data/users.json`. If you have an old SQLite file, remove it to re-seed, or run against Postgres in Docker.
+   On first start with an empty database, the app **imports** rows from `data/inventory.json` and `data/users.json`. If you have an old SQLite file, remove it to re-seed.
 
 3. **Start the app** (listens on **127.0.0.1:3333** unless `PORT` is set)
 
@@ -31,54 +31,44 @@
    python -m run
    ```
 
-4. **Open the shop:** the floor display at [http://127.0.0.1:3333/](http://127.0.0.1:3333/) and the member view at [http://127.0.0.1:3333/app](http://127.0.0.1:3333/app) (Vite 2 + React 17 + TS; build with `cd frontend && npm ci && npm run build` locally, or use Docker, which bakes the SPA in). Seeded logins are loaded from **`data/users.json`** (defaults: **admin** / **admin**, **jordan** / **sunday**, **alex** / **hunter2**). The catalog seed comes from **`data/inventory.json`**; both are read into the DB on **first** init when the DB is empty. (For evaluators: static analysis–heavy and dependency demo routes are still in the **backend** — e.g. `/v1/ops/…` (legacy back-office) and `/sca/…` — the storefront UIs are plain bookstore copy.)
+4. **Open the shop:** the floor display at [http://127.0.0.1:3333/](http://127.0.0.1:3333/) and the member view at [http://127.0.0.1:3333/app](http://127.0.0.1:3333/app). Seeded logins are loaded from **`data/users.json`** (defaults: **admin** / **admin**, **jordan** / **sunday**, **alex** / **hunter2**). The catalog seed comes from **`data/inventory.json`**; both are read into the DB on first init when the DB is empty.
 
 5. **Stop** with `Ctrl+C`.
 
 **Change port:** `export PORT=9000` (then re‑run `python -m run`).
 
-**SCA / CI (`npm`, reachability):** The committed `frontend/package-lock.json` must list **`https://registry.npmjs.org/`** in `resolved` fields, not a corporate or vendor proxy (proxy URLs in the lock will often trigger **`npm ERR! 401`** in clean sandboxes). The repo includes **`frontend/.npmrc`** and a root **`.npmrc`** pinning the public registry. A root **`package.json` / `package-lock.json`** pair exists only as metadata (no root JS deps); the installable app is under **`frontend/`** (`npm ci` + `npm run build` there). If your machine rewrote the lock, run: `cd frontend && rm -rf node_modules package-lock.json && npm install` and commit the new lock.
+**Dependency / CI notes (`npm`, reachability):** The committed `frontend/package-lock.json` must list **`https://registry.npmjs.org/`** in `resolved` fields, not a corporate or vendor proxy (proxy URLs in the lock often trigger **`npm ERR! 401`** in clean sandboxes). The repo includes **`frontend/.npmrc`** and a root **`.npmrc`** pinning the public registry. A root **`package.json` / `package-lock.json`** pair exists only as metadata (no root JS deps); the installable app is under **`frontend/`** (`npm ci` + `npm run build` there). If your machine rewrote the lock, run: `cd frontend && rm -rf node_modules package-lock.json && npm install` and commit the new lock.
 
 ---
 
-## Docker (full stack: app + PostgreSQL, “terrible on purpose”)
+## Docker (single container)
 
 **Requires [Docker](https://docs.docker.com/get-docker/) and Compose** on your machine. From the project root:
 
 ```bash
-docker compose up --build
+docker-compose up --build
 ```
 
 **What you get (local only):**
 
 | What | URL / port | Notes |
 |------|------------|--------|
-| **One** app process (web + API + lab routes + `/app` SPA) | **http://127.0.0.1:3333/** | **`DATABASE_URL`** → Postgres; **`./data` mounted read-only** so you can edit `data/inventory.json` and `data/users.json` and wipe the DB to re-seed. |
-| PostgreSQL | **127.0.0.1:5432** | **Weak, static password**; **5432 on the host** on purpose. |
-| `psycopg2-binary` | (library) | In the image for the DB driver. |
-| Optional: second auth-only process | (manual) | `python -m run_auth` on **5001** with `AUTH_SERVICE_MODE=1` — not started by `docker compose` by default. |
-| Optional: nginx | `deploy/nginx-insecure-research.conf` | **Not** used in compose; add your own service if you want a front proxy. |
+| **One** app container (web + API + `/app` SPA) | **http://127.0.0.1:3333/** | SQLite DB in `/data/inventory.db`; `./data` is mounted read-only for first-run import files. |
 
-**CRUD in Docker:** `GET /api/books` (search; still the **SQLi-relevant** string-built `WHERE` for vendors), `POST /api/books` (vulnerable string-built `INSERT`), and **`GET /api/books/<id>`** for a **parameterized** read of one row (more like a “real” REST read path). The UI loads the catalog from `GET /api/books` as before.
+**CRUD in Docker:** `GET /api/books`, `POST /api/books`, and `GET /api/books/<id>`. The UI loads the catalog from `GET /api/books`.
 
-**Image / compose are intentionally bad** for AppSec and compliance demos: app runs as **root**, **Postgres is exposed to the host**, **plaintext creds in `environment:`** (and extra fake API keys), `seccomp:unconfined`, `cap_add`, `extra_hosts`, no app `HEALTHCHECK`, `chmod 777` in the Dockerfile, `apt` without `clean`, legacy `requirements-sca-legacy.txt` in the image, build args that look like tokens, and more. Read the comments in `Dockerfile` and `docker-compose.yml` before changing anything.
+### Docker layout
 
-### Docker layout: monolith + Postgres (compose)
-
-- **`docker compose up --build`:** `postgres` + one **`vulnerable-bookstore`** container. No extra auth or nginx services.
+- **`docker-compose up --build`:** one **`bookstore-app`** container.
 - **Seed data:** `data/inventory.json` and `data/users.json` (three accounts including **admin** / **admin**). Edit those files, reset the database volume, and start again to pick up a new first-run seed.
 - **`Dockerfile` multi‑stage:** Node **18** builds the Vite 2 + React 17 + TypeScript storefront into `static/app/`, then the Python image copies it.
-- **Evaluators only:** HTTP APIs that are not part of the normal shopping flow (`GET /api/users?…`, `/api/exposed/users` with env flag, back-office/legacy at `/v1/ops/…`, SCA at `/sca/…`) are unchanged; they are not linked from the shop UIs.
-- **Optional:** run **`python -m run_auth`** locally for a tiny `AUTH_SERVICE_MODE=1` listen on `5001` (same codepath, not part of compose by default).
-- **Kubernetes** (`k8s/research-*.yaml`): one **bookstore** deployment + Postgres + single-host ingress (auth-only manifests removed to match compose). A deliberately bad one‑file sample is still `k8s/deployment-insecure.yaml`. **Do not** apply in production clusters.
-
-**Apply (lab only):** `kubectl apply -f k8s/00-research-namespace.yaml` and `kubectl apply -f k8s/research-*.yaml` — set `image:` in `k8s/research-bookstore-deployment.yaml` to a built image.
+- **Back-office paths:** `/v1/ops/capabilities` lists the legacy import/diagnostic endpoints; `/sca` lists partner SDK smoke checks used by dependency tools.
 
 ---
 
-## 1) SCA — 10+ reachable dependency call sites (SBOM / reachability)
+## 1) Dependency reachability — 10+ package call sites
 
-Each row is a **different package** with an **intentionally dated** line in `requirements.txt` (or `requirements-sca-legacy.txt` in Docker). The code **imports and calls** the library in `bookstore/sinks/sca_stubs.py` and exposes it from **`GET /sca/run?k=…`**.
+Each row is a **different package** with a dated line in `requirements.txt` (or the container requirements file in Docker). The code imports and calls the library from vendor-adapter routes exposed under **`GET /sca/run?k=…`**.
 
 | # | `k` (for `/sca/run?k=`) | Package (examples) | Notes |
 |---|------------------------|--------------------|--------|
@@ -109,7 +99,7 @@ Each row is a **different package** with an **intentionally dated** line in `req
 
 **Discovery:** `GET /sca` returns the list of `k` values. Many handlers accept a query like `u=` (URL), `b64=`, `md=`, `t=`, or `json=`; see the handler map in `bookstore/routes/sca_demos.py`. **You should expect CVEs / advisories to vary** by the exact version your resolver installs; compare **host venv** vs **Docker** legacy file.
 
-**Also in the app (used on non‑`/sca` paths):** **Flask**, **Werkzeug**, **Jinja2**, **PyYAML** (`unsafe_load` in `bookstore/sinks/yaml_sink.py` — SAST as well as SCA), **Pillow** (`read_cover_meta`), **lxml** / **markdown** in labs and `/util/bridge`, **cryptography** and **ecdsa** on `/util/*` curve/seal examples.
+**Also in the app (used on non‑`/sca` paths):** **Flask**, **Werkzeug**, **Jinja2**, **PyYAML** (`unsafe_load` in `bookstore/sinks/yaml_sink.py`), **Pillow** (`read_cover_meta`), **lxml** / **markdown** in labs and `/util/bridge`, **cryptography** and **ecdsa** on `/util/*` curve/seal examples.
 
 ---
 
@@ -134,7 +124,7 @@ Many findings are **CWE**‑shaped. Flows on purpose cross **`sources` → `prop
 | 13 | Log injection / secrets in logs (CWE‑532) | password field sent to a logger with `%r` | `POST /v1/ops/login_diagnostics` JSON `{"u":…,"p":…}` |
 | 14 | `getattr(__builtins__, …)` (CWE‑95 class) | indirect dynamic call | `GET /v1/ops/builtin_lookup?n=…&c=…` |
 | 15 | `importlib` + tainted `module:attr` (CWE‑95 / 20) | dotted string split in sink | `GET /v1/ops/module_dotted?d=…` |
-| 16 | Charset + merge (CWE‑20 chain) | base64 → `charset_normalizer` after merge (SCA+SAST) | `GET /v1/ops/encoding_sanity?b64=…` |
+| 16 | Charset + merge (CWE‑20 chain) | base64 → `charset_normalizer` after merge | `GET /v1/ops/encoding_sanity?b64=…` |
 
 **Discoverability index:** `GET /v1/ops/capabilities` (JSON list of the `v1/ops` routes above; implementation: `bookstore/routes/ops_diagnostics.py`, `bookstore/sinks/legacy_batch_bridge.py`).
 
@@ -142,9 +132,9 @@ Many findings are **CWE**‑shaped. Flows on purpose cross **`sources` → `prop
 
 ---
 
-## 3) Container / image / compose — 10+ intentional misconfigurations
+## 3) Container / image / compose notes
 
-What to point CIS / Trivy / KSPM / kube‑linters at in **this** repo (details also in file comments):
+Container scanners will see a deliberately old-fashioned single-container layout:
 
 | # | What scanners flag | Where |
 |---|----------------------|--------|
@@ -161,8 +151,7 @@ What to point CIS / Trivy / KSPM / kube‑linters at in **this** repo (details a
 | 11 | `extra_hosts` (suspicious override pattern) | `extra_hosts` |
 | 12 | Plaintext env blocks for service keys in compose | `API_KEY_CART=…` |
 | 13 | Very high ulimits (DoS / blast‑radius in some baselines) | `ulimits.nproc` |
-| 14 | Optional unmounted nginx recipe (not in compose) | `deploy/nginx-insecure-research.conf` |
-| 15 | `docker compose` **bind‑mounts** `./data` into the app | Lets you change JSON seed files in place (still need empty DB to reapply seed) |
+| 14 | `docker compose` **bind‑mounts** `./data` into the app | Lets you change JSON seed files in place (still need empty DB to reapply seed) |
 
 (Use your vendor’s “policy / benchmark” name when you file tickets — the exact rule IDs differ.)
 
@@ -170,4 +159,4 @@ What to point CIS / Trivy / KSPM / kube‑linters at in **this** repo (details a
 
 ## License / intent
 
-Use only for **security research** and product evaluation. Add a `LICENSE` file (for example MIT) if you need a formal license line.
+Use locally for tool evaluation and product demos. Add a `LICENSE` file (for example MIT) if you need a formal license line.

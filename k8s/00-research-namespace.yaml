@@ -1,8 +1,0 @@
-# RESEARCH: apply this file first (namespace for all other `research-*.yaml` in this folder).
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: vulnerable-bookstore-research
-  labels:
-    app.kubernetes.io/part-of: python-vuln-app
-    research-only: "true"

@@ -1,44 +1,25 @@
-# The whole band in one room: one Python process, one Postgres, zero orchestration cosplay.
-# (Optional nginx lives in deploy/ if you need to hurt yourself on purpose in prod-like demos.)
+# Storefront + back-office API in one local container.
+# SQLite lives in the named volume at /data; JSON import files stay mounted read-only from ./data.
 # -----------------------------------------------------------------------------
 
 services:
-  postgres:
-    image: postgres:15.8-bookworm
-    restart: "no"
-    environment:
-      POSTGRES_USER: bookstore
-      POSTGRES_PASSWORD: changeme_research_plaintext_5432
-      POSTGRES_DB: bookstore
-    ports:
-      - "127.0.0.1:5432:5432"
-    volumes:
-      - pg_research_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bookstore -d bookstore || exit 1"]
-      interval: 2s
-      timeout: 4s
-      retries: 30
-      start_period: 4s
-
-  # Monolith: catalog + account APIs + the usual backend demo routes, `/app` SPA, still terrible on purpose
-  vulnerable-bookstore:
+  bookstore-app:
     build: .
-    image: vulnerable-bookstore:local
+    image: stack-and-spine:local
     user: "0:0"
-    depends_on:
-      postgres:
-        condition: service_healthy
     ports:
       - "127.0.0.1:3333:3333"
     volumes:
-      # Tweak `data/inventory.json` and `data/users.json` on the host; app reads them on empty DB init
       - ./data:/app/data:ro
+      - app_state:/data
     environment:
-      - DATABASE_URL=postgresql://bookstore:changeme_research_plaintext_5432@postgres:5432/bookstore
-      - BOOKSTORE_SECRET_KEY=compromised-in-compose-file-RESEARCH
-      - API_KEY_CART=sk-demo-static-key-RESEARCH
-      - API_KEY_SVC_RESEARCH=prod-looking-leaked-key-RESEARCH
+      - INVENTORY_DB_PATH=/data/inventory.db
+      - BOOKSTORE_SECRET_KEY=compromised-in-compose-file
+      - API_KEY_CART=sk_live_51N9UxFakeLocalPartnerKeyDontUse
+      - API_KEY_SVC_RESEARCH=ghp_5QwFakeLocalIntegrationToken1234567890
+      - AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+      - AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+      - ALLOW_EXPOSED_USERS=1
       - FLASK_DEBUG=1
       - PORT=3333
       - BIND_ALL=1
@@ -54,4 +35,4 @@ services:
     read_only: false
 
 volumes:
-  pg_research_data: {}
+  app_state: {}

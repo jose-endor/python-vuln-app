@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600" viewBox="0 0 400 600">
+  <rect width="400" height="600" fill="#f2fbe9"/>
+  <rect x="20" y="20" width="360" height="560" rx="14" fill="#fbfff4" stroke="#2b4d2d" stroke-width="4"/>
+  <text x="200" y="92" text-anchor="middle" font-size="28" font-family="Georgia" fill="#1f3f21">A Tale of Two</text>
+  <text x="200" y="126" text-anchor="middle" font-size="24" font-family="Georgia" fill="#1f3f21">Sessions</text>
+  <circle cx="200" cy="250" r="27" fill="none" stroke="#1f3f21" stroke-width="5"/>
+  <line x1="200" y1="277" x2="200" y2="390" stroke="#1f3f21" stroke-width="5"/>
+  <line x1="200" y1="320" x2="142" y2="345" stroke="#1f3f21" stroke-width="5"/>
+  <line x1="200" y1="320" x2="258" y2="345" stroke="#1f3f21" stroke-width="5"/>
+  <line x1="200" y1="390" x2="148" y2="470" stroke="#1f3f21" stroke-width="5"/>
+  <line x1="200" y1="390" x2="252" y2="470" stroke="#1f3f21" stroke-width="5"/>
+  <text x="200" y="525" text-anchor="middle" font-size="16" font-family="Courier New" fill="#1f3f21">POST /transfer (oops)</text>
+</svg>

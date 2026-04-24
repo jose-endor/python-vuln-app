@@ -1,5 +1,5 @@
 #!/bin/sh
-# RESEARCH: wait for Postgres (compose healthcheck is primary; this is extra resilience)
+# Optional DSN wait loop for deployments that provide a remote database.
 set -e
 if [ -n "${DATABASE_URL}" ] || [ -n "${INVENTORY_DSN}" ]; then
   i=0
@@ -17,7 +17,7 @@ c.close()
     echo "could not connect to database DSN" >&2
     exit 1
   fi
-  echo "waiting for postgres... ($i)"
+  echo "waiting for database... ($i)"
   sleep 1
 done
 fi

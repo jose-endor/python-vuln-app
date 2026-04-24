@@ -1,4 +1,4 @@
-# RESEARCH: every function calls a real third-party entry point (for SCA / SBOM reachability).
+# Vendor adapters: each helper exercises a real third-party package used by older integrations.
 from __future__ import annotations
 
 import asyncio

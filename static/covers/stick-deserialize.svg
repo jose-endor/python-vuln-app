@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600" viewBox="0 0 400 600">
+  <rect width="400" height="600" fill="#f5edff"/>
+  <rect x="20" y="20" width="360" height="560" rx="14" fill="#fcf8ff" stroke="#4b2f66" stroke-width="4"/>
+  <text x="200" y="90" text-anchor="middle" font-size="28" font-family="Georgia" fill="#39224f">War and Pickle</text>
+  <text x="200" y="124" text-anchor="middle" font-size="20" font-family="Georgia" fill="#39224f">A Loaded Tale</text>
+  <circle cx="200" cy="250" r="27" fill="none" stroke="#39224f" stroke-width="5"/>
+  <line x1="200" y1="277" x2="200" y2="390" stroke="#39224f" stroke-width="5"/>
+  <line x1="200" y1="320" x2="146" y2="350" stroke="#39224f" stroke-width="5"/>
+  <line x1="200" y1="320" x2="254" y2="350" stroke="#39224f" stroke-width="5"/>
+  <line x1="200" y1="390" x2="150" y2="470" stroke="#39224f" stroke-width="5"/>
+  <line x1="200" y1="390" x2="250" y2="470" stroke="#39224f" stroke-width="5"/>
+  <text x="200" y="525" text-anchor="middle" font-size="15" font-family="Courier New" fill="#39224f">pickle.loads(mystery)</text>
+</svg>

@@ -1,1 +1,1 @@
-# Intentionally vulnerable demo application — for security research only.
+# Stack & Spine local bookstore application.

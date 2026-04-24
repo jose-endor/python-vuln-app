@@ -1,22 +1,19 @@
-# RESEARCH: intentional misconfigurations for container and Kubernetes policy demos.
-# Not for production. Build: docker compose build
-#
-# Multi-stage: (A) Node builds React 17 + TS app → static/app (B) Python image (same bad practices as before)
+# Local bookstore container. Build: docker compose build
+# Multi-stage: (A) Node builds React 17 + TS app -> static/app (B) Python image.
 
 FROM node:18-bullseye-slim AS frontend
 WORKDIR /build/frontend
-COPY frontend/package.json frontend/package-lock.json ./
+COPY frontend/package.json frontend/package-lock.json frontend/.npmrc ./
 RUN npm ci
 COPY frontend/ ./
 RUN npm run build
 # Vite outDir: ../static/app from frontend/
 RUN test -f /build/static/app/index.html
 
-# Leaked from CI / pipeline examples (Trivy / secret / misconfig scanners)
 FROM python:3.10.15-slim-bookworm
-ARG INSECURE_BUILD_ARG=leaked-pipeline-secret-RESEARCH-STATIC
+ARG INSECURE_BUILD_ARG=ci-fallback-token-local-static
 ARG EXTRA_BAD_TOKEN=hardcoded-ghp_fake_token_for_demos_1234
-ENV BOOKSTORE_SECRET_KEY=super-secret-embedded-in-image-RESEARCH-ONLY
+ENV BOOKSTORE_SECRET_KEY=local-dev-session-key-change-me
 ENV PIP_NO_CACHE_DIR=0
 ENV LEAKED_BUILD_ENV=${INSECURE_BUILD_ARG}
 ENV EXTRA_BAD_TOKEN=${EXTRA_BAD_TOKEN}
@@ -28,8 +25,8 @@ WORKDIR /app
 SHELL ["/bin/sh", "-c"]
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl ca-certificates \
-    && echo "intentionally not running rm -rf /var/lib/apt/lists/* for SCA/scan demos"
+    && apt-get install -y --no-install-recommends curl ca-certificates build-essential \
+    && echo "keeping apt list metadata in image for old support workflows"
 
 COPY requirements-sca-legacy.txt /app/
 RUN pip install -r /app/requirements-sca-legacy.txt

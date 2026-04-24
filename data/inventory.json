@@ -2,124 +2,124 @@
   "version": 1,
   "books": [
     {
-      "title": "The Nightingale",
-      "author": "Kristin Hannah",
+      "title": "Pride and SQL Injection",
+      "author": "Jane AUSTINjection",
       "isbn": "978-0-31-234454-2",
-      "cover_path": "covers/default.png",
-      "category": "Fiction",
-      "summary": "Two sisters in occupied France—book club favorite and staff pick for historical fiction."
-    },
-    {
-      "title": "Project Hail Mary",
-      "author": "Andy Weir",
-      "isbn": "978-0-59-313520-4",
-      "cover_path": "covers/default.png",
-      "category": "Science Fiction",
-      "summary": "A lone astronaut, high stakes, and a lot of heart; great for long reading sessions."
-    },
-    {
-      "title": "Dune",
-      "author": "Frank Herbert",
-      "isbn": "978-0-44-101359-3",
-      "cover_path": "covers/default.png",
-      "category": "Science Fiction",
-      "summary": "Politics, ecology, and destiny on a desert world—a genre-defining classic."
-    },
-    {
-      "title": "The Pragmatic Programmer",
-      "author": "David Thomas, Andrew Hunt",
-      "isbn": "978-0-13-475759-9",
-      "cover_path": "covers/default.png",
-      "category": "Software",
-      "summary": "Timeless advice on craft, from tracer bullets to keeping your knowledge portfolio sharp."
-    },
-    {
-      "title": "Security Engineering (3rd ed.)",
-      "author": "Ross Anderson",
-      "isbn": "978-1-19-124332-0",
-      "cover_path": "covers/default.png",
-      "category": "Security",
-      "summary": "How real systems fail and how to design them to be robust—reference shelf essential."
-    },
-    {
-      "title": "SQL Antipatterns",
-      "author": "Bill Karwin",
-      "isbn": "978-1-93-435655-1",
-      "cover_path": "covers/default.png",
-      "category": "Database",
-      "summary": "A practical catalog of database design mistakes and safer patterns."
-    },
-    {
-      "title": "The Mythical Man-Month",
-      "author": "Frederick P. Brooks Jr.",
-      "isbn": "978-0-20-183595-3",
-      "cover_path": "covers/default.png",
-      "category": "Software",
-      "summary": "Essays on software project management that never seem to go out of print."
-    },
-    {
-      "title": "Clean Code",
-      "author": "Robert C. Martin",
-      "isbn": "978-0-13-235088-4",
-      "cover_path": "covers/default.png",
-      "category": "Software",
-      "summary": "Naming, functions, and the habits that make code easier to change over time."
-    },
-    {
-      "title": "1984",
-      "author": "George Orwell",
-      "isbn": "978-0-45-152493-5",
-      "cover_path": "covers/default.png",
-      "category": "Fiction",
-      "summary": "A classroom staple; dystopian fiction that still starts conversations."
-    },
-    {
-      "title": "Sapiens",
-      "author": "Yuval Noah Harari",
-      "isbn": "978-0-06-231610-3",
-      "cover_path": "covers/default.png",
-      "category": "History",
-      "summary": "A sweeping history of humankind from the cognitive revolution forward."
-    },
-    {
-      "title": "The Thursday Murder Club",
-      "author": "Richard Osman",
-      "isbn": "978-0-25-300060-0",
-      "cover_path": "covers/default.png",
-      "category": "Mystery",
-      "summary": "Retirement-home sleuths, cozy Brit wit, and very readable plotting."
-    },
-    {
-      "title": "Atomic Habits",
-      "author": "James Clear",
-      "isbn": "978-0-73-521129-2",
-      "cover_path": "covers/default.png",
-      "category": "Nonfiction",
-      "summary": "Small, repeatable changes that add up; displayed near the self-improvement bay."
-    },
-    {
-      "title": "The DevOps Handbook",
-      "author": "Gene Kim et al.",
-      "isbn": "978-1-94-104800-0",
-      "cover_path": "covers/default.png",
-      "category": "Software",
-      "summary": "The three ways, flow, and what high-performing technology teams practice."
-    },
-    {
-      "title": "Pride and Prejudice",
-      "author": "Jane Austen",
-      "isbn": "978-0-14-143951-8",
-      "cover_path": "covers/default.png",
+      "cover_path": "covers/stick-breach.svg",
       "category": "Classics",
-      "summary": "Romance and social comedy—perennial fiction table staple."
+      "summary": "A genteel estate, a dramatic query, and one very unfortunate WHERE clause."
     },
     {
-      "title": "Meditations",
-      "author": "Marcus Aurelius (Gregory Hays trans.)",
+      "title": "The Picture of Dorian XSS",
+      "author": "Oscar Wildcard",
+      "isbn": "978-0-59-313520-4",
+      "cover_path": "covers/stick-xss.svg",
+      "category": "Gothic",
+      "summary": "His face stays flawless while his comment section descends into chaos."
+    },
+    {
+      "title": "Moby-Drop Table",
+      "author": "Herman Shellville",
+      "isbn": "978-0-44-101359-3",
+      "cover_path": "covers/stick-shell.svg",
+      "category": "Adventure",
+      "summary": "Captain Ahab hunts a whale and accidentally executes everything after a semicolon."
+    },
+    {
+      "title": "Great Expectations of Input Validation",
+      "author": "Charles Sanitized",
+      "isbn": "978-0-13-475759-9",
+      "cover_path": "covers/stick-csrf.svg",
+      "category": "Classics",
+      "summary": "Young Pip rises in society, but never checks length, type, or intent."
+    },
+    {
+      "title": "War and Patch Management",
+      "author": "Leo Tolst-OWASP",
+      "isbn": "978-1-19-124332-0",
+      "cover_path": "covers/stick-deserialize.svg",
+      "category": "History",
+      "summary": "Epic armies march while security updates wait politely for next quarter."
+    },
+    {
+      "title": "The Count of Monte Crypto",
+      "author": "Alexandre Dumas-key",
+      "isbn": "978-1-93-435655-1",
+      "cover_path": "covers/stick-secrets.svg",
+      "category": "Adventure",
+      "summary": "A wrongful conviction, a hidden wallet file, and revenge paid in private keys."
+    },
+    {
+      "title": "A Tale of Two Sessions",
+      "author": "Charles Dick-Session",
+      "isbn": "978-0-20-183595-3",
+      "cover_path": "covers/stick-csrf.svg",
+      "category": "Classics",
+      "summary": "It was the best of logins, it was the worst of cookie flags."
+    },
+    {
+      "title": "Crime and Credential Leaks",
+      "author": "Fyodor Dostoev-key",
+      "isbn": "978-0-13-235088-4",
+      "cover_path": "covers/stick-secrets.svg",
+      "category": "Drama",
+      "summary": "A moral crisis unfolds after someone commits .env to main."
+    },
+    {
+      "title": "The Catcher in the Cross-Site",
+      "author": "J.D. SSOlinger",
+      "isbn": "978-0-45-152493-5",
+      "cover_path": "covers/stick-xss.svg",
+      "category": "Fiction",
+      "summary": "Holden wants to protect the kids; the browser wants to execute user input."
+    },
+    {
+      "title": "Brave New World-Writable",
+      "author": "Aldous Hux-Rootly",
+      "isbn": "978-0-06-231610-3",
+      "cover_path": "covers/stick-overflow.svg",
+      "category": "Dystopian",
+      "summary": "Everything is perfectly controlled except permissions, which are 777 forever."
+    },
+    {
+      "title": "One Flew Over the CSRF Nest",
+      "author": "Ken Keseycloak",
+      "isbn": "978-0-25-300060-0",
+      "cover_path": "covers/stick-csrf.svg",
+      "category": "Drama",
+      "summary": "A rebel clicks one harmless link and the nurse account performs a transfer."
+    },
+    {
+      "title": "Around the URL in 80 Requests",
+      "author": "Jules Vernetcat",
+      "isbn": "978-0-73-521129-2",
+      "cover_path": "covers/stick-ssrf.svg",
+      "category": "Adventure",
+      "summary": "A whirlwind itinerary that somehow includes the metadata service."
+    },
+    {
+      "title": "The Fellowship of the Ring Buffer",
+      "author": "J.R.R. Token",
+      "isbn": "978-1-94-104800-0",
+      "cover_path": "covers/stick-overflow.svg",
+      "category": "Fantasy",
+      "summary": "Nine brave devs walk into production with a fixed-size array and no fear."
+    },
+    {
+      "title": "Alice in Null-Pointer Land",
+      "author": "Lewis Carollback",
+      "isbn": "978-0-14-143951-8",
+      "cover_path": "covers/stick-deserialize.svg",
+      "category": "Fantasy",
+      "summary": "Down the rabbit hole where every object is mysteriously None."
+    },
+    {
+      "title": "The Old Man and the Phish",
+      "author": "Ernest Spoofingway",
       "isbn": "978-0-81-296358-5",
-      "cover_path": "covers/default.png",
-      "category": "Philosophy",
-      "summary": "Short entries from a Stoic emperor; easy to pick up between customers."
+      "cover_path": "covers/stick-breach.svg",
+      "category": "Classics",
+      "summary": "He can fight the sea, but can he resist a fake password reset email?"
     }
   ]
 }
