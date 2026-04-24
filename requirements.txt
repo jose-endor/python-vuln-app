@@ -1,35 +1,37 @@
-# RESEARCH: intentionally weak pins. Install only in isolated sandboxes.
-# SCA: urllib3, requests, older crypto; app code paths in README.
-# Stack supports current CPython; use requirements-sca-legacy.txt in Docker 3.10 for older SCA.
-
-Flask==3.0.3
-Werkzeug==3.0.3
-Jinja2==3.1.3
-itsdangerous==2.1.2
+anyio==4.13.0
+bcrypt==5.0.0
 blinker==1.8.2
+certifi==2026.4.22
+cffi==2.0.0
+chardet==4.0.0
+charset-normalizer==3.4.7
 click==8.1.7
-
-PyYAML==6.0.1
-# Still behind current; not latest (SCA can flag). Pair must match modern CPython.
-requests==2.31.0
-urllib3==2.0.7
-Pillow==10.4.0
-ecdsa==0.11
-lxml==5.3.0
-# 3.5+ for Python 3.12+ importlib; still a dated line for SCA
-Markdown==3.6.0
 cryptography==42.0.0
-
-# SCA: additional runtime call sites (see /sca/run?k=… and bookstore/sinks/sca_stubs.py)
-# httpx (async) — older 0.2x lines have CVEs; 0.27+ stays pip-installable on modern CPython
+ecdsa==0.11
+Flask==3.0.3
+h11==0.16.0
+httpcore==1.0.9
 httpx==0.27.0
-paramiko==2.12.0
-redis==4.5.4
-pycryptodomex==3.9.4
-python-jose==3.2.0
-protobuf==3.20.3
-# ujson: C-backed JSON, older lines common SCA noise (wheels on common platforms)
-ujson==5.4.0
+idna==2.10
+itsdangerous==2.1.2
+Jinja2==3.1.3
+lxml==5.3.0
+Markdown==3.6
 MarkupSafe==2.1.3
-# Wheels available for CPython 3.10–3.13; Docker image uses 3.10. Skip on 3.14+ for local venv (SQLite only).
-psycopg2-binary==2.9.9; python_version < "3.14"
+paramiko==2.12.0
+pillow==10.4.0
+protobuf==3.20.3
+pyasn1==0.6.3
+pycparser==3.0
+pycryptodomex==3.9.4
+PyNaCl==1.6.2
+python-jose==3.2.0
+PyYAML==6.0.1
+redis==4.5.4
+requests==2.31.0
+rsa==4.9.1
+six==1.17.0
+sniffio==1.3.1
+ujson==5.4.0
+urllib3==2.0.7
+Werkzeug==3.0.3
