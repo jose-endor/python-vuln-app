@@ -1,0 +1,32 @@
+# RESEARCH: ingress for multi-manifest demos (weak TLS / annotations patterns — adjust to your ingress class).
+# Requires an ingress controller in the cluster.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bookstore-ingress
+  namespace: vulnerable-bookstore-research
+  annotations:
+    research-only: "intentional-misconfig-example"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+spec:
+  rules:
+    - host: bookstore-research.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: vulnerable-bookstore
+                port:
+                  number: 3333
+    - host: auth-research.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 5001

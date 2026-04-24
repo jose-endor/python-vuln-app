@@ -1,26 +1,48 @@
-# Intentional misconfigurations for local container and supply-chain / benchmark demos.
-# RESEARCH ONLY. Run: docker compose up --build
-#
-# 1) Plaintext secrets in the compose file (CWE-260 class misconfigs)
-# 2) process runs as root
-# 3) seccomp fully relaxed
-# 4) extra_hosts mapping (suspicious DNS override pattern)
-# 5) ulimits set high
-# 6) No healthcheck, no read-only rootfs, no user namespace
-# 7) privileged caps available at runtime (all caps)
-# 8) Publishes port on all interfaces by default
+# RESEARCH: full stack in Docker for AppSec / CSPM stress tests. NOT FOR PRODUCTION.
+# - PostgreSQL with a weak known password, bound to the host
+# - API monolith: http://127.0.0.1:3333
+# - Auth microservice (same image, same DB, auth-only routes): http://127.0.0.1:5001
+# - Optional edge: http://127.0.0.1:8080 (nginx → monolith) — for multi-service / ingress-like demos
+# - `docker compose up --build` to build
+# -----------------------------------------------------------------------------
+
 services:
+  postgres:
+    image: postgres:15.8-bookworm
+    restart: "no"
+    environment:
+      POSTGRES_USER: bookstore
+      POSTGRES_PASSWORD: changeme_research_plaintext_5432
+      POSTGRES_DB: bookstore
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pg_research_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bookstore -d bookstore || exit 1"]
+      interval: 2s
+      timeout: 4s
+      retries: 30
+      start_period: 4s
+
+  # Full API + labs + SCA/SAST + same-process auth + /app (React) SPA
   vulnerable-bookstore:
     build: .
     image: vulnerable-bookstore:local
     user: "0:0"
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
       - "127.0.0.1:3333:3333"
     environment:
+      - DATABASE_URL=postgresql://bookstore:changeme_research_plaintext_5432@postgres:5432/bookstore
       - BOOKSTORE_SECRET_KEY=compromised-in-compose-file-RESEARCH
       - API_KEY_CART=sk-demo-static-key-RESEARCH
+      - API_KEY_SVC_RESEARCH=prod-looking-leaked-key-RESEARCH
       - FLASK_DEBUG=1
       - PORT=3333
+      - BIND_ALL=1
     ulimits:
       nproc: 1048576
     security_opt:
@@ -31,3 +53,40 @@ services:
     extra_hosts:
       - "demo.corp-scanner.evil:192.0.2.1"
     read_only: false
+
+  # Second process for microservice / SBOM / DAST targeting (auth routes + health; shared Postgres)
+  auth-service:
+    build: .
+    image: vulnerable-bookstore:local
+    user: "0:0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:5001:5001"
+    environment:
+      - AUTH_SERVICE_MODE=1
+      - DATABASE_URL=postgresql://bookstore:changeme_research_plaintext_5432@postgres:5432/bookstore
+      - BOOKSTORE_SECRET_KEY=compromised-in-compose-file-RESEARCH
+      - FLASK_DEBUG=1
+      - PORT=5001
+      - BIND_ALL=1
+    command: ["python", "-m", "run_auth"]
+    ulimits:
+      nproc: 1048576
+    security_opt:
+      - seccomp:unconfined
+    read_only: false
+
+  # Optional: single public-like port; upstream is still the monolith
+  edge-nginx:
+    image: nginx:1.25.4-alpine
+    depends_on:
+      - vulnerable-bookstore
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - ./deploy/nginx-insecure-research.conf:/etc/nginx/conf.d/default.conf:ro
+
+volumes:
+  pg_research_data: {}

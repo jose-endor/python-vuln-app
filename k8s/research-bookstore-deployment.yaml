@@ -1,0 +1,60 @@
+# RESEARCH: monolith. Replace `image` with a registry you control after `docker build -t ...`.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vulnerable-bookstore
+  namespace: vulnerable-bookstore-research
+  labels:
+    app: vulnerable-bookstore
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vulnerable-bookstore
+  template:
+    metadata:
+      labels:
+        app: vulnerable-bookstore
+    spec:
+      containers:
+        - name: api
+          image: vulnerable-bookstore:latest
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "run"]
+          ports:
+            - name: http
+              containerPort: 3333
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: bookstore-app-secrets
+                  key: DATABASE_URL
+            - name: BOOKSTORE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: bookstore-app-secrets
+                  key: BOOKSTORE_SECRET_KEY
+            - name: API_KEY_CART
+              valueFrom:
+                secretKeyRef:
+                  name: bookstore-app-secrets
+                  key: API_KEY_CART
+            - name: FLASK_DEBUG
+              valueFrom:
+                configMapKeyRef:
+                  name: bookstore-flags
+                  key: FLASK_DEBUG
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: bookstore-flags
+                  key: PORT
+            - name: BIND_ALL
+              valueFrom:
+                configMapKeyRef:
+                  name: bookstore-flags
+                  key: BIND_ALL
+          securityContext:
+            runAsUser: 0
+            allowPrivilegeEscalation: true

@@ -8,3 +8,6 @@ __pycache__
 .mypy_cache
 *.db-journal
 data/*.db
+# Frontend deps live only in the Node build stage; shrink context
+frontend/node_modules
+static/app

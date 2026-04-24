@@ -1,0 +1,120 @@
+.page {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.25rem;
+  color: #1a1614;
+  background: #faf7f2;
+  min-height: 100vh;
+}
+.head h1 {
+  font-size: 1.35rem;
+  margin: 0;
+}
+.sub {
+  color: #5c5652;
+  font-size: 0.9rem;
+  margin-top: 0.4rem;
+}
+code {
+  background: #e8e2da;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.card {
+  background: #fff;
+  border: 1px solid #e2dcd4;
+  border-radius: 8px;
+  padding: 1rem;
+  flex: 0 0 18rem;
+}
+.grow {
+  flex: 1 1 20rem;
+  min-width: 16rem;
+}
+h2,
+h3 {
+  font-size: 1rem;
+  margin: 0 0 0.5rem 0;
+}
+h3 {
+  font-size: 0.9rem;
+  color: #8b4514;
+  margin-top: 1rem;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.form label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8rem;
+  color: #5c5652;
+}
+input {
+  font: inherit;
+  padding: 0.35rem 0.4rem;
+}
+button {
+  font: inherit;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  background: #2a5a47;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  margin-top: 0.25rem;
+  align-self: flex-start;
+}
+.err {
+  background: #fef0f0;
+  border: 1px solid #e0a0a0;
+  color: #7a1e1e;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  margin-top: 0.5rem;
+  font-size: 0.88rem;
+  word-break: break-word;
+}
+ul.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.5rem;
+}
+.tile {
+  background: #f0ebe4;
+  border-radius: 6px;
+  padding: 0.5rem;
+  font-size: 0.82rem;
+}
+.tile .t {
+  font-weight: 600;
+}
+.tile .a {
+  color: #5c5652;
+}
+.tile .c {
+  font-size: 0.72rem;
+  color: #2a5a47;
+  margin-top: 0.2rem;
+}
+.foot {
+  font-size: 0.8rem;
+  color: #5c5652;
+  margin-top: 1.5rem;
+  line-height: 1.5;
+}
+.foot a {
+  color: #2a5a47;
+}

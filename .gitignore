@@ -8,3 +8,5 @@ __pycache__/
 .DS_Store
 *.db-journal
 data/*.db
+frontend/node_modules
+static/app

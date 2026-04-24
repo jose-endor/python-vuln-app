@@ -15,14 +15,25 @@ def search_args() -> Dict[str, Any]:
 
 def book_form() -> Dict[str, Any]:
     if request.is_json:
-        body: Any = request.get_json(silent=True) or {}
+        b: Any = request.get_json(silent=True) or {}
     else:
-        body = request.form
+        b = request.form  # may be dict-like (MultiDict), not isinstance(..., dict)
+
+    def g(key: str) -> str:
+        if b is None:
+            return ""
+        v = b.get(key, "")
+        if isinstance(v, (list, tuple)) and v:
+            v = v[0]
+        return str(v or "") or ""
+
     return {
-        "title": (body or {}).get("title", "") or "",
-        "author": (body or {}).get("author", "") or "",
-        "isbn": (body or {}).get("isbn", "") or "",
-        "cover_path": (body or {}).get("cover_path", "") or "",
+        "title": g("title"),
+        "author": g("author"),
+        "isbn": g("isbn"),
+        "cover_path": g("cover_path"),
+        "category": g("category"),
+        "summary": g("summary"),
     }
 
 

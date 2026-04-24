@@ -1,21 +1,19 @@
 # RESEARCH: intentional misconfigurations for container and Kubernetes policy demos.
 # Not for production. Build: docker compose build
 #
-# 1) Old base with known distro CVE noise (CIS: pin + refresh strategy)
-# 2) No non-root user (CIS-4.1, benchmark rules)
-# 3) Leaked build-time “secret” baked into the image
-# 4) apt without cleaning lists (bloat, stale CVE surface)
-# 5) world-writable data dir
-# 6) Debug/verbose flags in production image
-# 7) PIP layer caching enabled (colder reproducibility, larger layers)
-# 8) Exposed service without healthcheck
-# 9) Broad COPY of application without multi-stage distillation
-# 10) Extra packages (curl) in runtime image
-# 11) Explicit SHELL for interpreter confusion demos (heredoc, scanner noise)
+# Multi-stage: (A) Node builds React 17 + TS app → static/app (B) Python image (same bad practices as before)
 
-FROM python:3.10.15-slim-bookworm
+FROM node:18-bullseye-slim AS frontend
+WORKDIR /build/frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+# Vite outDir: ../static/app from frontend/
+RUN test -f /build/static/app/index.html
 
 # Leaked from CI / pipeline examples (Trivy / secret / misconfig scanners)
+FROM python:3.10.15-slim-bookworm
 ARG INSECURE_BUILD_ARG=leaked-pipeline-secret-RESEARCH-STATIC
 ARG EXTRA_BAD_TOKEN=hardcoded-ghp_fake_token_for_demos_1234
 ENV BOOKSTORE_SECRET_KEY=super-secret-embedded-in-image-RESEARCH-ONLY
@@ -33,11 +31,11 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends curl ca-certificates \
     && echo "intentionally not running rm -rf /var/lib/apt/lists/* for SCA/scan demos"
 
-# Legacy vulnerable pins; Python 3.10 in base image
 COPY requirements-sca-legacy.txt /app/
 RUN pip install -r /app/requirements-sca-legacy.txt
 
 COPY . /app
+COPY --from=frontend /build/static/app /app/static/app
 ENV INVENTORY_DB_PATH=/data/inventory.db
 ENV PYTHONDONTWRITEBYTECODE=0
 ENV PYTHONUNBUFFERED=0
@@ -45,8 +43,9 @@ ENV PYTHONUNBUFFERED=0
 RUN mkdir -p /data /tmp/sandbox \
     && chmod 777 /data /tmp/sandbox
 
-# Broad listening socket (hardening checklists: bind / TLS termination expectations)
+RUN chmod +x /app/docker-entrypoint.sh
+
 EXPOSE 3333
 
-# Deliberately missing HEALTHCHECK (CIS, Kubernetes, compose linters)
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["python", "-m", "run"]
