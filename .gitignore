@@ -10,3 +10,12 @@ __pycache__/
 data/*.db
 frontend/node_modules
 static/app
+
+# Large archive files
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+
+# Endor Labs generated scan output
+.endor/

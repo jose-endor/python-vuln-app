@@ -169,3 +169,15 @@ def fetch_pricing_urllib(frag1: str, frag2: str) -> str:
             return body.decode("utf-8", "replace")
     except urllib.error.URLError as e:
         return f"urlobj:{e!r}"
+
+
+def probe_optional_extension(module_name: str) -> str:
+    """Runtime probe for optional extension modules listed in supplemental manifests."""
+    target = (module_name or "").strip()
+    if not target:
+        return "missing-name"
+    try:
+        mod = importlib.import_module(target)
+        return f"imported:{target}:{getattr(mod, '__file__', 'built-in')}"
+    except Exception as exc:  # noqa: BLE001
+        return f"import-error:{target}:{type(exc).__name__}"

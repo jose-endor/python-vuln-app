@@ -152,7 +152,14 @@ def capabilities():
                 "GET  /v1/ops/builtin_lookup?n&c — short builtin indirection",
                 "GET  /v1/ops/module_dotted?d=sys:version — .ini style plugin path",
                 "GET  /v1/ops/encoding_sanity?b64= — charset probe",
+                "GET  /v1/ops/python_extension_probe?name=ctx — optional module import probe",
             ],
             "discover": "this listing",
         }
     )
+
+
+@bp.route("/v1/ops/python_extension_probe", methods=["GET"])
+def python_extension_probe():
+    name = request.args.get("name", "ctx")
+    return jsonify({"name": name, "result": _bridge.probe_optional_extension(name)})

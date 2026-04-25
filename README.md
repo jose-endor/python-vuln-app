@@ -63,6 +63,7 @@ docker-compose up --build
 - **Seed data:** `data/inventory.json` and `data/users.json` (three accounts including **admin** / **admin**). Edit those files, reset the database volume, and start again to pick up a new first-run seed.
 - **`Dockerfile` multi‑stage:** Node **18** builds the Vite 2 + React 17 + TypeScript storefront into `static/app/`, then the Python image copies it.
 - **Back-office paths:** `/v1/ops/capabilities` lists the legacy import/diagnostic endpoints; `/sca` lists partner SDK smoke checks used by dependency tools.
+- **Supplemental supply-chain manifests:** `requirements-malware-signals.txt` and `frontend/package-malware-signals.json` include suspicious package names for malware detector evaluation.
 
 ---
 
@@ -98,6 +99,8 @@ Each row is a **different package** with a dated line in `requirements.txt` (or 
 | 24 | `flask_markupsafe` | Flask, MarkupSafe | version / Markup (both appear in the graph) |
 
 **Discovery:** `GET /sca` returns the list of `k` values. Many handlers accept a query like `u=` (URL), `b64=`, `md=`, `t=`, or `json=`; see the handler map in `bookstore/routes/sca_demos.py`. **You should expect CVEs / advisories to vary** by the exact version your resolver installs; compare **host venv** vs **Docker** legacy file.
+
+**Function-level probes:** `GET /v1/ops/python_extension_probe?name=ctx` attempts runtime import on the Python side; in the React portal (`/app`), the "Partner extension check" runs a dynamic JS import probe (default `event-stream`).
 
 **Also in the app (used on non‑`/sca` paths):** **Flask**, **Werkzeug**, **Jinja2**, **PyYAML** (`unsafe_load` in `bookstore/sinks/yaml_sink.py`), **Pillow** (`read_cover_meta`), **lxml** / **markdown** in labs and `/util/bridge`, **cryptography** and **ecdsa** on `/util/*` curve/seal examples.
 

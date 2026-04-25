@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import type { Book, Me } from "./types";
+import { probeOptionalDependency } from "./supplyProbe";
 
 axios.defaults.withCredentials = true;
 
@@ -22,6 +23,8 @@ export const App: React.FC = () => {
   const [regP, setRegP] = useState("");
   const [books, setBooks] = useState<Book[] | null>(null);
   const [err, setErr] = useState("");
+  const [depName, setDepName] = useState("event-stream");
+  const [depProbe, setDepProbe] = useState("");
 
   const loadMe = useCallback(async () => {
     setErr("");
@@ -81,6 +84,12 @@ export const App: React.FC = () => {
       /* hush, cookies */
     }
     setMe(null);
+  };
+
+  const runDepProbe = async () => {
+    setErr("");
+    const r = await probeOptionalDependency(depName);
+    setDepProbe(r);
   };
 
   return (
@@ -167,6 +176,20 @@ export const App: React.FC = () => {
               Register
             </button>
           </form>
+          <h3 className="subh">Partner extension check</h3>
+          <p className="small muted">Runtime probe for optional JS packages listed in supplemental manifests.</p>
+          <div className="form">
+            <input
+              className="inline"
+              value={depName}
+              onChange={(e) => setDepName(e.target.value)}
+              placeholder="event-stream"
+            />
+            <button type="button" className="btn-ghost small-btn" onClick={() => void runDepProbe()}>
+              Probe module import
+            </button>
+            {depProbe && <p className="small muted">{depProbe}</p>}
+          </div>
         </aside>
       </div>
 
