@@ -5,7 +5,7 @@ import os
 import sqlite3
 from typing import Any
 
-from flask import Blueprint, current_app, jsonify
+from flask import Blueprint, current_app, jsonify, request
 
 from bookstore.inventory_db import get_connection, uses_postgres
 from bookstore.propagation.search_pipeline import build_list_clause
@@ -33,7 +33,23 @@ def list_books():
     s = book_input.search_args()
     where = build_list_clause(s)
     rows = db_sink.run_list_query(current_app.config["INVENTORY_DB_PATH"], where)
-    return jsonify([_row_to_book(r) for r in rows])
+    out = [_row_to_book(r) for r in rows]
+    resp = jsonify(out)
+    # Optional: three-part partner probe header (scheme|host|path) — exercises sca_chain → urllib3.
+    rollup = (request.args.get("vendor_rollup") or "").strip()
+    if rollup:
+        from bookstore.sinks.sca_chain import chain_network_triple
+
+        segs = rollup.split("|", 2)
+        while len(segs) < 3:
+            segs.append("")
+        scheme, host, path = segs[0] or "http", segs[1] or "127.0.0.1:3333", segs[2] or "/"
+        try:
+            st = chain_network_triple(scheme, host, path)
+            resp.headers["X-Vendor-Probe"] = str(st)[:32]
+        except Exception as e:  # noqa: BLE001
+            resp.headers["X-Vendor-Probe"] = f"err:{type(e).__name__}"[:32]
+    return resp
 
 
 @bp.route("/api/books/<int:book_id>", methods=["GET"])

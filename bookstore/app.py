@@ -12,6 +12,7 @@ from bookstore.routes.cover import bp as cover_bp
 from bookstore.routes.curve import bp as curve_bp
 from bookstore.routes.fetcher import bp as fetcher_bp
 from bookstore.routes.lab import bp as lab_bp
+from bookstore.routes.orders_api import bp as orders_api_bp
 from bookstore.routes.preview import bp as preview_bp
 from bookstore.routes.ops_diagnostics import bp as ops_diagnostics_bp
 from bookstore.routes.sca_demos import bp as sca_bp
@@ -75,6 +76,7 @@ def create_app() -> Flask:
     app.register_blueprint(cover_bp, url_prefix="/util")
     app.register_blueprint(curve_bp, url_prefix="/util")
     app.register_blueprint(lab_bp, url_prefix="/lab")
+    app.register_blueprint(orders_api_bp, url_prefix="/")
     app.register_blueprint(bridge_bp, url_prefix="/util")
     app.register_blueprint(sca_bp, url_prefix="/")
     app.register_blueprint(ops_diagnostics_bp, url_prefix="/")

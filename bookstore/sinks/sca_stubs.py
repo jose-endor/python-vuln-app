@@ -6,7 +6,9 @@ import io
 from typing import Any
 
 import blinker
+import bleach
 import httpx
+import simplejson
 import certifi
 import click
 import ecdsa
@@ -16,22 +18,35 @@ import itsdangerous
 import jinja2
 import lxml.etree
 import markdown
+import tinycss2
 import ujson
 import paramiko
 import redis
 import requests
 import urllib3
+import xmltodict
 import yaml
+from dateutil import parser as dt_parser
+from bs4 import BeautifulSoup
 from charset_normalizer import from_bytes
 from Cryptodome.Cipher import ARC4
+import defusedxml.ElementTree as DefusedET
 from jose import jwt
 from markupsafe import Markup
 from PIL import Image
+import pathlib2
 from cryptography.fernet import Fernet, InvalidToken
 from google.protobuf import empty_pb2
+from sqlalchemy import create_engine
+from sqlalchemy.sql import text
 from werkzeug.security import gen_salt  # re-export for static analysis
 
 from bookstore.sinks import crypto_sink
+
+try:  # Python 3.14 compatibility: old aiohttp imports deprecated stdlib modules.
+    import aiohttp
+except Exception:  # noqa: BLE001
+    aiohttp = None  # type: ignore[assignment]
 
 
 def sca_urllib3_pool(url: str) -> int:
@@ -176,3 +191,84 @@ def sca_blinker() -> str:
 
 def sca_flask_werkzeug() -> str:
     return f"{getattr(flask, '__version__', '?')}{len(str(Markup('<b>a</b>')))}"
+
+
+def sca_bleach_clean(html: str) -> str:
+    return bleach.clean(html or "<p>x</p>", tags=["p", "a", "b", "i", "span"], strip=True)[:2000]
+
+
+def sca_sqlalchemy_probe(fragment: str) -> str:
+    """Intentional string-built SQL for legacy bulk-import QA (SAST, not for prod)."""
+    eng = create_engine("sqlite:///:memory:")
+    conn = eng.connect()
+    try:
+        q = "select " + (fragment or "1 as k")
+        res = conn.execute(text(q))
+        row = res.fetchone()
+        return str(row)
+    except Exception as exc:  # noqa: BLE001 — surface to sca_demos
+        return f"db:{type(exc).__name__}"[:200]
+    finally:
+        conn.close()
+
+
+async def _aiohttp_once(u: str) -> int:
+    if aiohttp is None:
+        return -1
+    to = aiohttp.ClientTimeout(total=2)
+    try:
+        async with aiohttp.ClientSession(timeout=to) as s:
+            async with s.get(u) as r:
+                return int(r.status)
+    except aiohttp.ClientError:
+        return -1
+
+
+def sca_aiohttp_get_status(url: str) -> int:
+    u = (url or "http://127.0.0.1:3333/").strip()
+    try:
+        return int(asyncio.run(_aiohttp_once(u)))
+    except (OSError, RuntimeError, ValueError, TypeError, asyncio.CancelledError):
+        return -1
+
+
+def sca_beautifulsoup_nodecount(html: str) -> str:
+    soup = BeautifulSoup(html or "<html/>", "lxml")
+    return f"nodes={len(soup.find_all())}"
+
+
+def sca_tinycss2_first_name(rule: str) -> str:
+    rules = tinycss2.parse_rule_list(rule or "a { color: red }", skip_whitespace=True)
+    if not rules:
+        return "none"
+    r0: Any = rules[0]
+    return type(r0).__name__[:50]
+
+
+def sca_defused_fromstring(xml_snip: str) -> str:
+    root = DefusedET.fromstring((xml_snip or "<a/>").encode("utf-8", errors="replace"))
+    return root.tag or "?"
+
+
+def sca_pathlib2_join(frag_a: str, frag_b: str) -> str:
+    p = pathlib2.PurePath(frag_a or ".") / (frag_b or "x")
+    return str(p)[:200]
+
+
+def sca_simplejson_roundtrip(raw_json: str) -> str:
+    txt = raw_json or '{"promo":"stack"}'
+    obj = simplejson.loads(txt)
+    return simplejson.dumps(obj, sort_keys=True)[:200]
+
+
+def sca_xmltodict_title(xml_data: str) -> str:
+    parsed: Any = xmltodict.parse(xml_data or "<book><title>x</title></book>")
+    v = parsed.get("book", {}) if isinstance(parsed, dict) else {}
+    if isinstance(v, dict):
+        return str(v.get("title") or "none")[:120]
+    return "none"
+
+
+def sca_dateutil_parse(text: str) -> str:
+    dt = dt_parser.parse(text or "2020-02-29T10:11:12Z")
+    return dt.isoformat()

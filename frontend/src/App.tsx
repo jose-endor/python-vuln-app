@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import type { Book, Me } from "./types";
+import { buildMemberRollupLabel, runOptionalListProbe } from "./catalogSidecar";
+import { deriveQuoteExplainer } from "./orderRiskChain";
 import { probeOptionalDependency } from "./supplyProbe";
 
 axios.defaults.withCredentials = true;
@@ -25,6 +27,12 @@ export const App: React.FC = () => {
   const [err, setErr] = useState("");
   const [depName, setDepName] = useState("event-stream");
   const [depProbe, setDepProbe] = useState("");
+  const [rollLabel, setRollLabel] = useState("");
+  const [urlProbe, setUrlProbe] = useState("");
+  const [urlProbeOut, setUrlProbeOut] = useState("");
+  const [orderRiskRaw, setOrderRiskRaw] = useState("tier=vip&coupon=stack-employee&uid=80&note=audit");
+  const [orderRiskXml, setOrderRiskXml] = useState("<promo><coupon>employee</coupon></promo>");
+  const [orderRiskOut, setOrderRiskOut] = useState("");
 
   const loadMe = useCallback(async () => {
     setErr("");
@@ -51,6 +59,11 @@ export const App: React.FC = () => {
     void loadMe();
     void loadBooks();
   }, [loadMe, loadBooks]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setRollLabel(buildMemberRollupLabel(`u ${window.location.origin}/api/books`));
+  }, []);
 
   const login = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,6 +103,28 @@ export const App: React.FC = () => {
     setErr("");
     const r = await probeOptionalDependency(depName);
     setDepProbe(r);
+  };
+
+  const runUrlProbe = async () => {
+    setErr("");
+    setUrlProbeOut("");
+    try {
+      const r = await runOptionalListProbe(urlProbe);
+      setUrlProbeOut(r);
+    } catch (e) {
+      setUrlProbeOut(errMsg(e));
+    }
+  };
+
+  const runOrderRiskProbe = async () => {
+    setErr("");
+    setOrderRiskOut("");
+    try {
+      const out = await deriveQuoteExplainer(orderRiskRaw, orderRiskXml);
+      setOrderRiskOut(out);
+    } catch (e) {
+      setOrderRiskOut(errMsg(e));
+    }
   };
 
   return (
@@ -176,6 +211,46 @@ export const App: React.FC = () => {
               Register
             </button>
           </form>
+          <h3 className="subh">Perks timestamp</h3>
+          <p className="small muted">
+            {rollLabel || "—"} <span className="muted">(member shelf stamp)</span>
+          </p>
+          <h3 className="subh">List sync probe</h3>
+          <p className="small muted">
+            e.g. <code>u http://127.0.0.1:3333/api/books</code>
+          </p>
+          <div className="form">
+            <input
+              className="inline"
+              value={urlProbe}
+              onChange={(e) => setUrlProbe(e.target.value)}
+              placeholder="u http://127.0.0.1:3333/api/books"
+            />
+            <button type="button" className="btn-ghost small-btn" onClick={() => void runUrlProbe()}>
+              GET via axios chain
+            </button>
+            {urlProbeOut && <p className="small muted">{urlProbeOut}</p>}
+          </div>
+          <h3 className="subh">Checkout policy merge probe</h3>
+          <p className="small muted">Parses query + XML coupon into a stacked discount explainer.</p>
+          <div className="form">
+            <input
+              className="inline"
+              value={orderRiskRaw}
+              onChange={(e) => setOrderRiskRaw(e.target.value)}
+              placeholder="tier=vip&coupon=stack-employee&uid=80"
+            />
+            <input
+              className="inline"
+              value={orderRiskXml}
+              onChange={(e) => setOrderRiskXml(e.target.value)}
+              placeholder="<promo><coupon>employee</coupon></promo>"
+            />
+            <button type="button" className="btn-ghost small-btn" onClick={() => void runOrderRiskProbe()}>
+              Run pricing chain
+            </button>
+            {orderRiskOut && <p className="small muted">{orderRiskOut}</p>}
+          </div>
           <h3 className="subh">Partner extension check</h3>
           <p className="small muted">Runtime probe for optional JS packages listed in supplemental manifests.</p>
           <div className="form">
