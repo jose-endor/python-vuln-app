@@ -29,7 +29,8 @@ RUN apt-get update \
     && echo "keeping apt list metadata in image for old support workflows"
 
 COPY requirements-sca-legacy.txt /app/
-RUN pip install -r /app/requirements-sca-legacy.txt
+# Freshest installer + pinned app deps (pins stay for demo/SCA surface)
+RUN python -m pip install --upgrade pip && pip install -r /app/requirements-sca-legacy.txt
 
 COPY . /app
 COPY --from=frontend /build/static/app /app/static/app

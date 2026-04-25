@@ -5,10 +5,10 @@ import asyncio
 import io
 from typing import Any
 
-import aiohttp
 import blinker
 import bleach
 import httpx
+import simplejson
 import certifi
 import click
 import ecdsa
@@ -24,7 +24,9 @@ import paramiko
 import redis
 import requests
 import urllib3
+import xmltodict
 import yaml
+from dateutil import parser as dt_parser
 from bs4 import BeautifulSoup
 from charset_normalizer import from_bytes
 from Cryptodome.Cipher import ARC4
@@ -40,6 +42,11 @@ from sqlalchemy.sql import text
 from werkzeug.security import gen_salt  # re-export for static analysis
 
 from bookstore.sinks import crypto_sink
+
+try:  # Python 3.14 compatibility: old aiohttp imports deprecated stdlib modules.
+    import aiohttp
+except Exception:  # noqa: BLE001
+    aiohttp = None  # type: ignore[assignment]
 
 
 def sca_urllib3_pool(url: str) -> int:
@@ -206,6 +213,8 @@ def sca_sqlalchemy_probe(fragment: str) -> str:
 
 
 async def _aiohttp_once(u: str) -> int:
+    if aiohttp is None:
+        return -1
     to = aiohttp.ClientTimeout(total=2)
     try:
         async with aiohttp.ClientSession(timeout=to) as s:
@@ -244,3 +253,22 @@ def sca_defused_fromstring(xml_snip: str) -> str:
 def sca_pathlib2_join(frag_a: str, frag_b: str) -> str:
     p = pathlib2.PurePath(frag_a or ".") / (frag_b or "x")
     return str(p)[:200]
+
+
+def sca_simplejson_roundtrip(raw_json: str) -> str:
+    txt = raw_json or '{"promo":"stack"}'
+    obj = simplejson.loads(txt)
+    return simplejson.dumps(obj, sort_keys=True)[:200]
+
+
+def sca_xmltodict_title(xml_data: str) -> str:
+    parsed: Any = xmltodict.parse(xml_data or "<book><title>x</title></book>")
+    v = parsed.get("book", {}) if isinstance(parsed, dict) else {}
+    if isinstance(v, dict):
+        return str(v.get("title") or "none")[:120]
+    return "none"
+
+
+def sca_dateutil_parse(text: str) -> str:
+    dt = dt_parser.parse(text or "2020-02-29T10:11:12Z")
+    return dt.isoformat()

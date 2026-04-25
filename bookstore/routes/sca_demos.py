@@ -50,6 +50,9 @@ _HANDLERS = {
     "tinycss2": lambda: sca_stubs.sca_tinycss2_first_name(request.args.get("css", "a { color: red }")),
     "defusedxml": lambda: sca_stubs.sca_defused_fromstring(request.args.get("xml", "<a/>")),
     "pathlib2": lambda: sca_stubs.sca_pathlib2_join(request.args.get("a", "/tmp"), request.args.get("b", "x.txt")),
+    "simplejson": lambda: sca_stubs.sca_simplejson_roundtrip(request.args.get("raw", '{"x":1}')),
+    "xmltodict": lambda: sca_stubs.sca_xmltodict_title(request.args.get("xml", "<book><title>x</title></book>")),
+    "dateutil": lambda: sca_stubs.sca_dateutil_parse(request.args.get("d", "2020-02-29T10:11:12Z")),
     "chain_net": lambda: str(
         sca_chain.chain_network_triple(
             request.args.get("s", "http"),
@@ -72,6 +75,12 @@ _HANDLERS = {
     "chain_bs4": lambda: sca_chain.chain_bs4_lxml_len(request.args.get("snip", "<section/>")),
     "chain_tinycss": lambda: sca_chain.chain_tinycss_name(request.args.get("rule", "b { }")),
     "chain_defused": lambda: sca_chain.chain_defused_bootstrap(request.args.get("xml", "<x/>")),
+    "chain_simplejson": lambda: sca_chain.chain_simplejson_payload(request.args.get("p", '{"promo":'), request.args.get("v", '"stack"}')),
+    "chain_xml": lambda: sca_chain.chain_xml_partner_note(
+        request.args.get("x1", "<book><title>"),
+        request.args.get("x2", "Legacy</title></book>"),
+    ),
+    "chain_dateutil": lambda: sca_chain.chain_eta_parse(request.args.get("d1", "2024-04-25T"), request.args.get("d2", "09:00:00Z")),
 }
 
 

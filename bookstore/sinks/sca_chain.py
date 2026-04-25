@@ -74,3 +74,18 @@ def chain_tinycss_name(rule: str) -> str:
 def chain_defused_bootstrap(xml_snip: str) -> str:
     """Rounds an XML hint through a safe helper so both libs stay reachable."""
     return sca_stubs.sca_defused_fromstring(xml_snip or "<a/>")
+
+
+def chain_simplejson_payload(prefix: str, payload: str) -> str:
+    merged = interleave((prefix or '{"a":')[:20], payload or '"1"}', "a")
+    return sca_stubs.sca_simplejson_roundtrip(merged)
+
+
+def chain_xml_partner_note(h1: str, h2: str) -> str:
+    body = merge_ordered(("x", "y"), {"x": h1 or "<book><title>", "y": h2 or "Legacy</title></book>"}, "")
+    return sca_stubs.sca_xmltodict_title(body)
+
+
+def chain_eta_parse(d1: str, d2: str) -> str:
+    joined = tuple_join([("d1", d1 or ""), ("d2", d2 or "")], ["d1", "d2"], {"d1": "2020-01-01", "d2": "Z"})
+    return sca_stubs.sca_dateutil_parse(joined)

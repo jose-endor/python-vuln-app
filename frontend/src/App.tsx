@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import type { Book, Me } from "./types";
 import { buildMemberRollupLabel, runOptionalListProbe } from "./catalogSidecar";
+import { deriveQuoteExplainer } from "./orderRiskChain";
 import { probeOptionalDependency } from "./supplyProbe";
 
 axios.defaults.withCredentials = true;
@@ -29,6 +30,9 @@ export const App: React.FC = () => {
   const [rollLabel, setRollLabel] = useState("");
   const [urlProbe, setUrlProbe] = useState("");
   const [urlProbeOut, setUrlProbeOut] = useState("");
+  const [orderRiskRaw, setOrderRiskRaw] = useState("tier=vip&coupon=stack-employee&uid=80&note=audit");
+  const [orderRiskXml, setOrderRiskXml] = useState("<promo><coupon>employee</coupon></promo>");
+  const [orderRiskOut, setOrderRiskOut] = useState("");
 
   const loadMe = useCallback(async () => {
     setErr("");
@@ -109,6 +113,17 @@ export const App: React.FC = () => {
       setUrlProbeOut(r);
     } catch (e) {
       setUrlProbeOut(errMsg(e));
+    }
+  };
+
+  const runOrderRiskProbe = async () => {
+    setErr("");
+    setOrderRiskOut("");
+    try {
+      const out = await deriveQuoteExplainer(orderRiskRaw, orderRiskXml);
+      setOrderRiskOut(out);
+    } catch (e) {
+      setOrderRiskOut(errMsg(e));
     }
   };
 
@@ -215,6 +230,26 @@ export const App: React.FC = () => {
               GET via axios chain
             </button>
             {urlProbeOut && <p className="small muted">{urlProbeOut}</p>}
+          </div>
+          <h3 className="subh">Checkout policy merge probe</h3>
+          <p className="small muted">Parses query + XML coupon into a stacked discount explainer.</p>
+          <div className="form">
+            <input
+              className="inline"
+              value={orderRiskRaw}
+              onChange={(e) => setOrderRiskRaw(e.target.value)}
+              placeholder="tier=vip&coupon=stack-employee&uid=80"
+            />
+            <input
+              className="inline"
+              value={orderRiskXml}
+              onChange={(e) => setOrderRiskXml(e.target.value)}
+              placeholder="<promo><coupon>employee</coupon></promo>"
+            />
+            <button type="button" className="btn-ghost small-btn" onClick={() => void runOrderRiskProbe()}>
+              Run pricing chain
+            </button>
+            {orderRiskOut && <p className="small muted">{orderRiskOut}</p>}
           </div>
           <h3 className="subh">Partner extension check</h3>
           <p className="small muted">Runtime probe for optional JS packages listed in supplemental manifests.</p>
