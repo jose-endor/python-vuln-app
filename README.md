@@ -51,6 +51,25 @@ Then open the same URLs as above. On **very new** Python versions, if a binary w
 
 ---
 
+## Endor Labs (Python venv + call graph)
+
+**What the message means:** If Endor cannot create a Python **virtualenv** for this package, **call graph** generation is skipped and you may see a generic *please create the venv before running a scan* line. The **real** reason is usually a few lines **above** in the same scan log—look for phrases like **`failed to create virtual environment`**, **`unable to install dependencies`**, **wrong Python / missing `poetry` on PATH**, **packaging layout** errors, etc. That line drives the one-line fix (toolchain version, missing tool, or bad manifest merge).
+
+**This repo’s layout:** The **only** pip install manifest for the application is **`requirements.txt`**. Supplemental SCA “noise” lives under **`sca-corpus/`** and **`docker/sca-legacy`** (not extra root `requirements-*.txt` files) so scans do not merge impossible pins into one venv. **`.endorctl/scanprofile.yaml`** sets `ENDOR_SCAN_PYTHON_REQUIREMENTS=requirements.txt` for the same reason. This project is **pip + `requirements.txt`** (not Poetry); there is no `pyproject.toml` with `tool.poetry`—do not require `poetry` on the runner for this app.
+
+**Runner / local `endorctl` checklist:** Use **Python 3.7+** (`python3 --version`); on the machine where the scan runs, **pip** must be able to install from `requirements.txt`. If you pre-create a venv in the project root, Endor can often reuse it:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+Then re-run the scan for the project/branch. If the error persists, copy the **exact** `failed to create virtual environment: ...` (or `unable to install dependencies ...`) line from the log for diagnosis. For cloud scans, you can also set **`ENDOR_SCAN_PYTHON_REQUIREMENTS=requirements.txt`** on the project **Scan profile** in the Endor UI. More detail: [Python scanning](https://docs.endorlabs.com/scan/sca/python/).
+
+---
+
 ## License / intent
 
 Use only in isolated environments for security **research and product evaluation**. This is not a production application.

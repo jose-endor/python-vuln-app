@@ -28,9 +28,9 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends curl ca-certificates build-essential \
     && echo "keeping apt list metadata in image for old support workflows"
 
-COPY requirements-sca-legacy.txt /app/
+COPY docker/sca-legacy /app/docker/sca-legacy
 # Freshest installer + pinned app deps (pins stay for demo/SCA surface)
-RUN python -m pip install --upgrade pip && pip install -r /app/requirements-sca-legacy.txt
+RUN python -m pip install --upgrade pip && pip install -r /app/docker/sca-legacy
 
 COPY . /app
 COPY --from=frontend /build/static/app /app/static/app
