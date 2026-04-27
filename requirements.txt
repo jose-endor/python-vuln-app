@@ -1,4 +1,4 @@
-# Local venv: PyPI only (no private indexes). For Docker, see requirements-sca-legacy.txt.
+# Local venv: PyPI only (no private indexes). For the container image, see docker/sca-legacy.
 anyio==4.13.0
 bcrypt==5.0.0
 blinker==1.8.2
