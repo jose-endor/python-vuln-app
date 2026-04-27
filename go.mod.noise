@@ -1,0 +1,7 @@
+// go.mod noise — not a real Go build; for multi-ecosystem SCA / repo scanners only.
+// module local.bookstore/scanner.noise
+//
+// require (
+//     golang.org/x/crypto v0.0.0-20170214220638-noise
+//     github.com/gin-gonic/gin v0.0.0-noise
+// )
