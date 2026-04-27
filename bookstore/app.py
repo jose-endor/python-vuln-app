@@ -18,6 +18,10 @@ from bookstore.routes.ops_diagnostics import bp as ops_diagnostics_bp
 from bookstore.routes.sca_demos import bp as sca_bp
 from bookstore.routes.user_api import bp as user_api_bp
 
+# Scanner training corpus: inert SAST patterns (see bookstore/noise/, bookstore/sast_tiered/). No new routes.
+import bookstore.noise  # noqa: F401, E501
+import bookstore.sast_tiered  # noqa: F401, E501
+
 # Dev default session key; replace in anything facing real users.
 DEV_SESSION_SALT = "dev-salt-CHANGE-ME-RESEARCH-ONLY"  # noqa: S105
 

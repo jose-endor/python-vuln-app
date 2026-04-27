@@ -1,165 +1,56 @@
-# Stack & Spine Bookstore
+# Stack & Spine Bookstore (research)
 
-Local bookstore app with a small catalog, member sign-in, back-office import endpoints, and a container build that mirrors an older retail stack. Run it on your machine at `http://127.0.0.1:3333`.
-
----
-
-## Quick start (3 steps)
-
-1. **Create a virtual environment and install dependencies**
-
-   ```bash
-   cd python-vuln-app
-   python3 -m venv .venv
-   source .venv/bin/activate
-   pip install -r requirements.txt
-   ```
-
-   On **CPython 3.14+**, `psycopg2-binary` is omitted from the resolver (no wheel yet), so a local venv uses **SQLite**.
-
-2. **(Optional) Put the SQLite file where you like**
-
-   ```bash
-   export INVENTORY_DB_PATH=./data/inventory.db
-   ```
-
-   On first start with an empty database, the app **imports** rows from `data/inventory.json` and `data/users.json`. If you have an old SQLite file, remove it to re-seed.
-
-3. **Start the app** (listens on **127.0.0.1:3333** unless `PORT` is set)
-
-   ```bash
-   python -m run
-   ```
-
-4. **Open the shop:** the floor display at [http://127.0.0.1:3333/](http://127.0.0.1:3333/) and the member view at [http://127.0.0.1:3333/app](http://127.0.0.1:3333/app). Seeded logins are loaded from **`data/users.json`** (defaults: **admin** / **admin**, **jordan** / **sunday**, **alex** / **hunter2**). The catalog seed comes from **`data/inventory.json`**; both are read into the DB on first init when the DB is empty.
-
-5. **Stop** with `Ctrl+C`.
-
-**Change port:** `export PORT=9000` (then re‑run `python -m run`).
-
-**Dependency / CI notes (`npm`, reachability):** The committed `frontend/package-lock.json` must list **`https://registry.npmjs.org/`** in `resolved` fields, not a corporate or vendor proxy (proxy URLs in the lock often trigger **`npm ERR! 401`** in clean sandboxes). The repo includes **`frontend/.npmrc`** and a root **`.npmrc`** pinning the public registry. A root **`package.json` / `package-lock.json`** pair exists only as metadata (no root JS deps); the installable app is under **`frontend/`** (`npm ci` + `npm run build` there). If your machine rewrote the lock, run: `cd frontend && rm -rf node_modules package-lock.json && npm install` and commit the new lock.
+**This repository is a deliberately vulnerable test application** built for **application security (AppSec)** tooling: static analysis, SCA, secret scanning, container policy checks, and related demos. It **must not** be exposed to the internet, used for real data, or treated as a secure baseline. Intentional weaknesses include insecure code paths, dependency choices, and configuration (including Docker and compose).
 
 ---
 
-## Docker (single container)
+## Run with Docker (recommended)
 
-**Requires [Docker](https://docs.docker.com/get-docker/) and Compose** on your machine. From the project root:
+**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) with **Compose** available as either `docker compose` (plugin) or `docker-compose` (standalone).
+
+From the project root:
 
 ```bash
+docker compose up --build
+# or, if the plugin is not available:
 docker-compose up --build
 ```
 
-**What you get (local only):**
+- **App URL:** [http://127.0.0.1:3333/](http://127.0.0.1:3333/) (only listens on the loopback interface in the default compose file).
+- **Storefront (SPA):** [http://127.0.0.1:3333/app](http://127.0.0.1:3333/app)
+- **Stop:** `Ctrl+C` in the foreground terminal, or in another shell: `docker compose down` / `docker-compose down`.
+- **Use another port:** set `PORT` in `docker-compose.yml` under `environment` and change the `ports` mapping (for example `127.0.0.1:9000:9000` with `PORT=9000`).
 
-| What | URL / port | Notes |
-|------|------------|--------|
-| **One** app container (web + API + `/app` SPA) | **http://127.0.0.1:3333/** | SQLite DB in `/data/inventory.db`; `./data` is mounted read-only for first-run import files. |
+**First run / data:** The container keeps SQLite on a **named volume** at `/data` (`app_state` in compose). Seeded **users and catalog** come from `data/users.json` and `data/inventory.json` on first import when the database is empty. The `./data` folder is mounted read-only into the app so you can edit those JSON files; to **re-seed** from them, remove the named volume and start again, for example:
 
-**CRUD in Docker:** `GET /api/books`, `POST /api/books`, and `GET /api/books/<id>`. The UI loads the catalog from `GET /api/books`.
+```bash
+docker compose down -v
+docker compose up --build
+```
 
-### Docker layout
-
-- **`docker-compose up --build`:** one **`bookstore-app`** container.
-- **Seed data:** `data/inventory.json` and `data/users.json` (three accounts including **admin** / **admin**). Edit those files, reset the database volume, and start again to pick up a new first-run seed.
-- **`Dockerfile` multi‑stage:** Node **18** builds the Vite 2 + React 17 + TypeScript storefront into `static/app/`, then the Python image copies it.
-- **Back-office paths:** `/v1/ops/capabilities` lists the legacy import/diagnostic endpoints; `/sca` lists partner SDK smoke checks used by dependency tools.
-- **Supplemental supply-chain manifests:** `requirements-malware-signals.txt` and `frontend/package-malware-signals.json` include suspicious package names for malware detector evaluation.
+**Default test accounts** (from `data/users.json`): **admin** / **admin**, **jordan** / **sunday**, **alex** / **hunter2**.
 
 ---
 
-## 1) Dependency reachability — 10+ package call sites
+## Run without Docker (local venv)
 
-Each row is a **different package** with a dated line in `requirements.txt` (or the container requirements file in Docker). The code imports and calls the library from vendor-adapter routes exposed under **`GET /sca/run?k=…`**.
+Use this when you want to hack on the code without rebuilding the image.
 
-| # | `k` (for `/sca/run?k=`) | Package (examples) | Notes |
-|---|------------------------|--------------------|--------|
-| 1 | `urllib3` | urllib3 | `PoolManager().request` |
-| 2 | `requests` | requests | `requests.get` |
-| 3 | `certifi` | certifi | `certifi.where` |
-| 4 | `idna` | idna | `idna.encode` |
-| 5 | `charset_normalizer` | charset-normalizer | `from_bytes` (alias `charset_normalizer`) |
-| 6 | `pyyaml` | PyYAML | `yaml.safe_load` |
-| 7 | `pillow` | Pillow | `PIL.Image.open` |
-| 8 | `lxml` | lxml | `lxml.etree.fromstring` |
-| 9 | `markdown` | Python‑Markdown | `markdown.markdown` |
-| 10 | `ecdsa` | ecdsa | signing key / curve (see stub) |
-| 11 | `cryptography_fernet` | cryptography | `Fernet` (also wired from `bookstore/sinks/crypto_sink.py`) |
-| 12 | `paramiko` | paramiko | host key / RSA (SSH stack) |
-| 13 | `redis` | redis | `from_url` client pool (no local Redis required for a graph hit) |
-| 14 | `pycryptodomex` | pycryptodomex | `ARC4` |
-| 15 | `jose` | python‑jose | unverified header parse (JWT) |
-| 16 | `httpx` | httpx | `AsyncClient` + `asyncio.run` (async HTTP different from `requests` graph) |
-| 17 | `protobuf` | protobuf | `empty_pb2.Empty` `Serialize` / `Parse` |
-| 18 | `ujson` | ujson | C JSON encode/decode |
-| 19 | `werkzeug` | Werkzeug | `gen_salt` |
-| 20 | `jinja2` | Jinja2 | small template (escape on) |
-| 21 | `itsdangerous` | itsdangerous | `URLSafeSerializer` |
-| 22 | `click` | click | `click.unstyle(click.style(…))` |
-| 23 | `blinker` | blinker | `blinker.signal` |
-| 24 | `flask_markupsafe` | Flask, MarkupSafe | version / Markup (both appear in the graph) |
+```bash
+cd python-vuln-app
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+export INVENTORY_DB_PATH=./data/inventory.db   # optional; default is under project data/
+python -m run
+```
 
-**Discovery:** `GET /sca` returns the list of `k` values. Many handlers accept a query like `u=` (URL), `b64=`, `md=`, `t=`, or `json=`; see the handler map in `bookstore/routes/sca_demos.py`. **You should expect CVEs / advisories to vary** by the exact version your resolver installs; compare **host venv** vs **Docker** legacy file.
+Then open the same URLs as above. On **very new** Python versions, if a binary wheel is missing (for example for some database drivers), the app is written to work with **SQLite** as in the default `requirements.txt` flow. **Change port:** `export PORT=9000` then `python -m run`.
 
-**Function-level probes:** `GET /v1/ops/python_extension_probe?name=ctx` attempts runtime import on the Python side; in the React portal (`/app`), the "Partner extension check" runs a dynamic JS import probe (default `event-stream`).
-
-**Also in the app (used on non‑`/sca` paths):** **Flask**, **Werkzeug**, **Jinja2**, **PyYAML** (`unsafe_load` in `bookstore/sinks/yaml_sink.py`), **Pillow** (`read_cover_meta`), **lxml** / **markdown** in labs and `/util/bridge`, **cryptography** and **ecdsa** on `/util/*` curve/seal examples.
-
----
-
-## 2) Challenging static analysis — 10+ “hard” issues (multi‑source, propagation, indirect sinks)
-
-Many findings are **CWE**‑shaped. Flows on purpose cross **`sources` → `propagation` / `sync` → `sinks`**, and several routes merge **more than one** of `{query, JSON, headers, raw body, cookies}` so shallow single‑file regex engines miss the sink.
-
-| # | Theme / CWE (typical) | Why it is “harder” | Entry point (examples) |
-|---|------------------------|--------------------|------------------------|
-| 1 | Merged `eval` (CWE‑95) | `strip_noise` on one operand + ordered merge of `p1`…`p3` | `GET /v1/ops/finance_preview?p1=&p2=&p3=` |
-| 2 | Pickle / merged b64 (CWE‑502) | two base64 halves concatenated pre‑`loads` | `GET /v1/ops/restore_b64?a=&b=` |
-| 3 | `marshal` loads (CWE‑502) | `interleave` reorders two halves of one blob | `GET /v1/ops/restore_marshal?a&b&order=` |
-| 4 | `subprocess` + shell (CWE‑78) | JSON `a` / `b` joined at the sink (no route‑local quote) | `POST /v1/ops/receipt_echo` body `{"a":…,"b":…}` |
-| 5 | Path / LFI (CWE‑22) | `tuple_join` of `a`,`b` plus a third `ext` segment | `GET /v1/ops/shelf_excerpt?a=&b=&ext=` |
-| 6 | Open redirect (CWE‑601) | `a` + `b` merged, passed to `redirect` | `GET /v1/ops/vendor_redirect?a=&b=` |
-| 7 | SSTI / Jinja (CWE‑1336) | `a` + `b` + `c` merged before `from_string` | `POST /v1/ops/jacket_preview` |
-| 8 | `lxml` on raw XML (CWE‑91 / 611 class) | POST body only | `POST /v1/ops/ingest_xml_lxml` |
-| 9 | `xml.etree` parse (stdlib) | same story, different module path | `POST /v1/ops/ingest_xml_stdlib` |
-| 10 | SSRF, triple URL (CWE‑918) | `s` + `h` + `p` reassembled in one sink that calls `requests` | `GET /v1/ops/vendor_status?s=&h=&p=` |
-| 11 | SSRF, `httpx` + `asyncio.run` (CWE‑918) | **different** HTTP stack and async entry | `GET /v1/ops/vendor_status_aio?a&b` |
-| 12 | SSRF, `urllib.request` (CWE‑918) | stdlib client, merged URL | `GET /v1/ops/vendor_status_urllib?a&b` |
-| 13 | Log injection / secrets in logs (CWE‑532) | password field sent to a logger with `%r` | `POST /v1/ops/login_diagnostics` JSON `{"u":…,"p":…}` |
-| 14 | `getattr(__builtins__, …)` (CWE‑95 class) | indirect dynamic call | `GET /v1/ops/builtin_lookup?n=…&c=…` |
-| 15 | `importlib` + tainted `module:attr` (CWE‑95 / 20) | dotted string split in sink | `GET /v1/ops/module_dotted?d=…` |
-| 16 | Charset + merge (CWE‑20 chain) | base64 → `charset_normalizer` after merge | `GET /v1/ops/encoding_sanity?b64=…` |
-
-**Discoverability index:** `GET /v1/ops/capabilities` (JSON list of the `v1/ops` routes above; implementation: `bookstore/routes/ops_diagnostics.py`, `bookstore/sinks/legacy_batch_bridge.py`).
-
-**“Classic” flows (still in the app, multi‑file):** SQLite injection (`/api/books` — `search_pipeline` → `db_sink`), command execution (`/util/backup` → `shell_sink`), SSRF v1 (`/util/fetch` + `url_pipeline` → `http_client_sink`), SSTI admin (`/admin/preview` → `jinja_sink`), reflected XSS (`/echo` — `|safe` in a template string), `yaml.unsafe_load` on `/admin/ingest` (`yaml_sink`), ReDoS (`/lab/redos` through `regex_chain` → `regex_sink`), and indirect `/util/bridge?kind=…` (`dispatch_merge` → `markdown` / lxml `fragment`).
-
----
-
-## 3) Container / image / compose notes
-
-Container scanners will see a deliberately old-fashioned single-container layout:
-
-| # | What scanners flag | Where |
-|---|----------------------|--------|
-| 1 | `USER` not dropped to a non‑privileged uid | `Dockerfile` (implicit root + compose `user: 0:0`) |
-| 2 | “Secrets” in `ENV` / `ARG` | `ARG INSECURE_BUILD_ARG`, `EXTRA_BAD_TOKEN`, `LEAKED_BUILD_ENV` |
-| 3 | `FLASK_DEBUG=1` in a shipped image | `ENV` in `Dockerfile` and compose `environment` |
-| 4 | PIP / layer hygiene (`PIP_NO_CACHE_DIR=0`, `COPY` plus Node `npm ci` in another stage) | `Dockerfile` (multi-stage) |
-| 5 | Stale / fat base (`python:…-slim` without an explicit hardening / refresh pass) | `FROM` line |
-| 6 | `apt` install with **no** `apt-get clean` / `rm` of `lists` | `RUN apt-get` block |
-| 7 | Over‑broad `chmod` (`777`) on a persistent directory | `chmod 777` on `/data` and `/tmp/sandbox` |
-| 8 | Extra packages in runtime (curl) | `apt-get install` |
-| 9 | No `HEALTHCHECK` | (deliberately omitted) |
-| 10 | `seccomp:unconfined` and extra `cap_add` in compose | `docker-compose.yml` `security_opt`, `cap_add` |
-| 11 | `extra_hosts` (suspicious override pattern) | `extra_hosts` |
-| 12 | Plaintext env blocks for service keys in compose | `API_KEY_CART=…` |
-| 13 | Very high ulimits (DoS / blast‑radius in some baselines) | `ulimits.nproc` |
-| 14 | `docker compose` **bind‑mounts** `./data` into the app | Lets you change JSON seed files in place (still need empty DB to reapply seed) |
-
-(Use your vendor’s “policy / benchmark” name when you file tickets — the exact rule IDs differ.)
+**Frontend:** The repo ships prebuilt static assets. To rebuild the React app yourself: `cd frontend && npm ci && npm run build` (output goes under `static/app/`, as used by the Flask app).
 
 ---
 
 ## License / intent
 
-Use locally for tool evaluation and product demos. Add a `LICENSE` file (for example MIT) if you need a formal license line.
+Use only in isolated environments for security **research and product evaluation**. This is not a production application.
