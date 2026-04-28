@@ -10,6 +10,7 @@ from bookstore.routes.books import bp as books_bp
 from bookstore.routes.bridge import bp as bridge_bp
 from bookstore.routes.cover import bp as cover_bp
 from bookstore.routes.curve import bp as curve_bp
+from bookstore.routes.cwe_gallery import bp as cwe_gallery_bp
 from bookstore.routes.fetcher import bp as fetcher_bp
 from bookstore.routes.lab import bp as lab_bp
 from bookstore.routes.orders_api import bp as orders_api_bp
@@ -84,6 +85,7 @@ def create_app() -> Flask:
     app.register_blueprint(bridge_bp, url_prefix="/util")
     app.register_blueprint(sca_bp, url_prefix="/")
     app.register_blueprint(ops_diagnostics_bp, url_prefix="/")
+    app.register_blueprint(cwe_gallery_bp, url_prefix="/")
 
     @app.route("/app", defaults={"subpath": ""})
     @app.route("/app/<path:subpath>")

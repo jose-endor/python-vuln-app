@@ -5,6 +5,7 @@ from __future__ import annotations
 from bookstore.noise import (
     assert_unreachable,
     constant_only_sinks,
+    cwe_mitigated_pairs,
     dead_branches,
     fragment_sink_strings,
     http_constant_url,
@@ -28,6 +29,7 @@ from bookstore.noise import (
 __all__ = [
     "assert_unreachable",
     "constant_only_sinks",
+    "cwe_mitigated_pairs",
     "dead_branches",
     "fragment_sink_strings",
     "http_constant_url",
