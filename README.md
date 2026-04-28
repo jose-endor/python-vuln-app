@@ -34,7 +34,7 @@ docker compose up --build
 
 ## Run without Docker (local venv)
 
-Use this when you want to hack on the code without rebuilding the image.
+Useful for quick iteration and for tooling that scans a plain checkout — **SAST / SCA** use your manifests and source; **container scanners** use `Dockerfile` / compose regardless of how you run Python.
 
 ```bash
 cd python-vuln-app
@@ -45,9 +45,9 @@ export INVENTORY_DB_PATH=./data/inventory.db   # optional; default is under proj
 python -m run
 ```
 
-Then open the same URLs as above. On **very new** Python versions, if a binary wheel is missing (for example for some database drivers), the app is written to work with **SQLite** as in the default `requirements.txt` flow. **Change port:** `export PORT=9000` then `python -m run`.
+Then open the same URLs as above. **Change port:** `export PORT=9000` then `python -m run`.
 
-**Frontend:** The repo ships prebuilt static assets. To rebuild the React app yourself: `cd frontend && npm ci && npm run build` (output goes under `static/app/`, as used by the Flask app).
+**Frontend:** To rebuild the React app: `cd frontend && npm ci && npm run build` (output goes under `static/app/`).
 
 ---
 
