@@ -17,5 +17,5 @@ static/app
 *.tgz
 *.zip
 
-# Endor Labs generated scan output
+# Generated local scanner/agent output
 .endor/

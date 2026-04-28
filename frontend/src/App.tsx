@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import type { Book, Me } from "./types";
 import { buildMemberRollupLabel, runOptionalListProbe } from "./catalogSidecar";
+import { CweLab } from "./CweLab";
 import { deriveQuoteExplainer } from "./orderRiskChain";
 import { probeOptionalDependency } from "./supplyProbe";
 
@@ -267,6 +268,8 @@ export const App: React.FC = () => {
           </div>
         </aside>
       </div>
+
+      <CweLab />
 
       <footer className="subfoot">Curbside · special orders · gift wrap when we are not too slammed.</footer>
     </div>

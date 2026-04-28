@@ -34,7 +34,7 @@ docker compose up --build
 
 ## Run without Docker (local venv)
 
-Use this when you want to hack on the code without rebuilding the image.
+Useful for quick iteration and for tooling that scans a plain checkout — **SAST / SCA** use your manifests and source; **container scanners** use `Dockerfile` / compose regardless of how you run Python.
 
 ```bash
 cd python-vuln-app
@@ -45,28 +45,9 @@ export INVENTORY_DB_PATH=./data/inventory.db   # optional; default is under proj
 python -m run
 ```
 
-Then open the same URLs as above. On **very new** Python versions, if a binary wheel is missing (for example for some database drivers), the app is written to work with **SQLite** as in the default `requirements.txt` flow. **Change port:** `export PORT=9000` then `python -m run`.
+Then open the same URLs as above. **Change port:** `export PORT=9000` then `python -m run`.
 
-**Frontend:** The repo ships prebuilt static assets. To rebuild the React app yourself: `cd frontend && npm ci && npm run build` (output goes under `static/app/`, as used by the Flask app).
-
----
-
-## Endor Labs (Python venv + call graph)
-
-**What the message means:** If Endor cannot create a Python **virtualenv** for this package, **call graph** generation is skipped and you may see a generic *please create the venv before running a scan* line. The **real** reason is usually a few lines **above** in the same scan log—look for phrases like **`failed to create virtual environment`**, **`unable to install dependencies`**, **`ResolutionImpossible`** (pip cannot satisfy pinned versions together), **wrong Python / missing `poetry` on PATH**, **packaging layout** errors, etc. **Committing a `.venv` does not fix `ResolutionImpossible`:** the scanner builds its own venv; if `pip install -r requirements.txt` fails on the runner, fix the pins until install succeeds locally first.
-
-**This repo’s layout:** The **only** pip install manifest for the application is **`requirements.txt`**. Supplemental SCA “noise” lives under **`sca-corpus/`** and **`docker/sca-legacy`** (not extra root `requirements-*.txt` files) so scans do not merge impossible pins into one venv. **`.endorctl/scanprofile.yaml`** sets `ENDOR_SCAN_PYTHON_REQUIREMENTS=requirements.txt` for the same reason. This project is **pip + `requirements.txt`** (not Poetry); there is no `pyproject.toml` with `tool.poetry`—do not require `poetry` on the runner for this app.
-
-**Runner / local `endorctl` checklist:** Use **Python 3.7+** (`python3 --version`); on the machine where the scan runs, **pip** must be able to install from `requirements.txt`. If you pre-create a venv in the project root, Endor can often reuse it:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-Then re-run the scan for the project/branch. If the error persists, copy the **exact** `failed to create virtual environment: ...` (or `unable to install dependencies ...`) line from the log for diagnosis. For cloud scans, you can also set **`ENDOR_SCAN_PYTHON_REQUIREMENTS=requirements.txt`** on the project **Scan profile** in the Endor UI. More detail: [Python scanning](https://docs.endorlabs.com/scan/sca/python/).
+**Frontend:** To rebuild the React app: `cd frontend && npm ci && npm run build` (output goes under `static/app/`).
 
 ---
 

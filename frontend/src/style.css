@@ -199,6 +199,27 @@ input.inline,
   margin-top: 0.15rem;
 }
 
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.cwe-panel {
+  margin-top: 1.5rem;
+}
+
+.cwe-output {
+  min-height: 2rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem;
+  border: 1px dashed #b9a78d;
+  background: #fff8eb;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.85rem;
+  word-break: break-word;
+}
+
 .welcome {
   font-family: ui-sans-serif, system-ui, sans-serif;
   font-size: 0.95rem;
