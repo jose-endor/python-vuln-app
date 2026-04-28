@@ -1,5 +1,5 @@
 import axios from "axios";
-import merge from "lodash/merge";
+import merge from "lodash/object/merge";
 import moment from "moment";
 import minimist from "minimist";
 
