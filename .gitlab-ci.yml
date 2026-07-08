@@ -1,0 +1,32 @@
+# Run Endor Labs scans from GitLab CI after pushing this GitHub-hosted repo to a GitLab remote.
+stages:
+  - security
+
+endorctl_scan:
+  stage: security
+  image: python:3.10-bookworm
+
+  # Keep required Endor values in GitLab CI/CD variables, not in the repository.
+  # Required variables:
+  # - ENDOR_NAMESPACE
+  # - ENDOR_API_CREDENTIALS_KEY
+  # - ENDOR_API_CREDENTIALS_SECRET
+  variables:
+    PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+  # Install the tools endorctl needs to inspect this mixed Python + npm demo app.
+  before_script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends ca-certificates curl git nodejs npm
+    - curl -sL https://api.endorlabs.com/download/latest/endorctl_linux_amd64 -o /usr/local/bin/endorctl
+    - chmod +x /usr/local/bin/endorctl
+    - endorctl --version
+
+  # Scan the full repository so Endor can detect the root Python manifest and frontend npm manifest.
+  script:
+    - endorctl scan --path . --output-type summary
+
+  # Run on merge requests and on branch pushes, including a manually pushed GitLab test branch.
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+    - if: $CI_COMMIT_BRANCH
