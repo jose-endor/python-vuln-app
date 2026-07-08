@@ -13,6 +13,18 @@ endorctl_scan:
   # - ENDOR_API_CREDENTIALS_SECRET
   variables:
     PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    # Keep npm's cache inside the project dir so GitLab can cache it between runs.
+    npm_config_cache: "$CI_PROJECT_DIR/.npm"
+
+  # Cache the frontend install so we don't reinstall ~900 packages every pipeline.
+  # Keyed on the lockfile: cache is reused until dependencies actually change.
+  cache:
+    key:
+      files:
+        - frontend/package-lock.json
+    paths:
+      - .npm/
+      - frontend/node_modules/
 
   # Install the tools endorctl needs to inspect this mixed Python + npm demo app.
   before_script:
@@ -21,8 +33,18 @@ endorctl_scan:
     - curl -sL https://api.endorlabs.com/download/latest/endorctl_linux_amd64 -o /usr/local/bin/endorctl
     - chmod +x /usr/local/bin/endorctl
     - endorctl --version
+    # JS/TS reachability: Endor needs node_modules (incl. @types/* dev deps) present to build
+    # the frontend call graph. This app pins ancient/conflicting packages, so strict installs
+    # hit ERESOLVE — force legacy peer resolution and fall back to `install` so a peer conflict
+    # never fails the whole scan. `npm ci` is preferred (deterministic) when the lockfile allows.
+    - >
+      npm --prefix frontend ci --prefer-offline --no-audit --no-fund --legacy-peer-deps
+      || npm --prefix frontend install --no-audit --no-fund --legacy-peer-deps
+    # Python reachability needs no install step: Endor resolves requirements.txt itself and
+    # builds the call graph from the bookstore/ source already in the repo.
 
-  # Scan the full repository so Endor can detect the root Python manifest and frontend npm manifest.
+  # Scan the full repo. Reachability/call-graph runs by default for every supported language;
+  # Python resolves from source, and the frontend now has node_modules so its call graph builds.
   script:
     - endorctl scan --path . --output-type summary
 
