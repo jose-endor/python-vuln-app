@@ -40,13 +40,34 @@ endorctl_scan:
     - >
       npm --prefix frontend ci --prefer-offline --no-audit --no-fund --legacy-peer-deps
       || npm --prefix frontend install --no-audit --no-fund --legacy-peer-deps
+    # endorctl runs its host-check from the repo ROOT and resolves `typescript` there to decide
+    # whether it can build JS/TS call graphs. Our typescript only lives in frontend/node_modules,
+    # so root resolution fails and reachability gets disabled. Install the matching compiler
+    # globally and expose it via NODE_PATH so the root-level require('typescript') succeeds.
+    # (Installing at the repo root instead would recreate a stray root npm package in the scan.)
+    - npm install -g typescript@4.9.5
+    - export NODE_PATH="$(npm root -g)"
     # Python reachability needs no install step: Endor resolves requirements.txt itself and
     # builds the call graph from the bookstore/ source already in the repo.
 
   # Scan the full repo. Reachability/call-graph runs by default for every supported language;
   # Python resolves from source, and the frontend now has node_modules so its call graph builds.
+  #
+  # GitLab checks out a DETACHED HEAD ("... as detached HEAD (ref is main)"), so endorctl can't
+  # read the branch name from git and otherwise records every commit as its own orphan version.
+  # --detached-ref-name feeds it the real ref name; on the default branch we also pass
+  # --as-default-branch so all main scans roll up under the monitored branch instead of piling
+  # up as separate "repository versions".
   script:
-    - endorctl scan --path . --output-type summary
+    - |
+      if [ "$CI_COMMIT_REF_NAME" = "$CI_DEFAULT_BRANCH" ]; then
+        endorctl scan --path . --output-type summary \
+          --detached-ref-name "$CI_COMMIT_REF_NAME" \
+          --as-default-branch
+      else
+        endorctl scan --path . --output-type summary \
+          --detached-ref-name "$CI_COMMIT_REF_NAME"
+      fi
 
   # Run on merge requests and on branch pushes, including a manually pushed GitLab test branch.
   rules:
