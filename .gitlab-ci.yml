@@ -1,16 +1,26 @@
-# Example GitLab CI pipeline: implement Endor Labs scanning via endorctl for SCA and SAST.
-# Drop this into a GitLab project to run dependency (SCA) and static analysis (SAST) scans
-# as part of your pipeline, with reachability-aware call graphs for Python and JavaScript/TS.
+# Example GitLab CI pipeline: implement broad Endor Labs asset coverage via endorctl.
+# Drop this into a GitLab project to run, in one pipeline:
+#   - SCA  : reachability-aware dependency scanning (Python + JavaScript/TS call graphs)
+#   - SAST : static analysis of first-party source code (Opengrep-based)
+#   - Secrets : leaked-credential detection in the checked-out tree
+#   - Container : image SBOM + OS/library vuln scan of the app's Docker image
 #
-# Coverage model (see the two jobs below):
-#   - endor_baseline : FULL scan of the monitored default branch (source of truth) + scheduled
-#                      drift scans. Uses --as-default-branch so every main scan rolls up under
-#                      one branch history instead of creating orphan "repository versions".
-#   - endor_mr       : diff-aware PR scan on merge requests. Gates the change and (optionally)
-#                      comments on the MR. Never marks itself as the default branch.
+# IMPORTANT endorctl behavior: a bare `endorctl scan` defaults to SCA only. As soon as you
+# add ANY scanner selector flag (--sast, --secrets, ...), the implicit dependency scan is no
+# longer included, so we ALWAYS pass --dependencies explicitly to keep SCA running alongside.
 #
-# NOTE: pushing directly to main only runs endor_baseline. The MR job requires an actual
-#       merge request to exist, so demo the PR flow via a feature branch -> MR into main.
+# Coverage model (see the jobs below):
+#   - endor_baseline : FULL SCA+SAST+secrets scan of the monitored default branch (source of
+#                      truth) + scheduled drift scans. Uses --as-default-branch so every main
+#                      scan rolls up under one branch history instead of creating orphan
+#                      "repository versions".
+#   - endor_mr       : diff-aware PR scan (SCA+SAST+secrets) on merge requests. Gates the change
+#                      and (optionally) comments on the MR. Never marks itself as the default branch.
+#   - endor_container: builds the app image and runs a dedicated `endorctl container scan`,
+#                      associating the container findings with this repo's branch history.
+#
+# NOTE: pushing directly to main only runs the baseline/container jobs. The MR job requires an
+#       actual merge request to exist, so demo the PR flow via a feature branch -> MR into main.
 stages:
   - security
 
@@ -74,8 +84,14 @@ endor_baseline:
   script:
     # GitLab checks out a DETACHED HEAD, so feed endorctl the real ref name and mark it as the
     # default branch so all main scans roll up under the monitored branch.
+    #   --dependencies : reachability-aware SCA (must be explicit once other scanners are on)
+    #   --sast         : first-party source code static analysis
+    #   --secrets      : leaked-credential detection across the checked-out tree
     - >
       endorctl scan --path . --output-type summary
+      --dependencies
+      --sast
+      --secrets
       --detached-ref-name "$CI_COMMIT_REF_NAME"
       --as-default-branch
   rules:
@@ -90,13 +106,58 @@ endor_mr:
   extends: .endor_base
   script:
     # --pr marks this as a PR scan; --pr-baseline is the branch you're merging into.
+    # Same broad coverage as the baseline (SCA + SAST + secrets) but scoped as a PR gate.
     # Add --pr-incremental to only re-analyze changed packages (faster, lighter reachability).
     # Add --enable-pr-comments once the Endor GitLab SCM integration is connected, to post
     # findings as inline MR comments.
     - >
       endorctl scan --path . --output-type summary
+      --dependencies
+      --sast
+      --secrets
       --pr
       --pr-baseline "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
       --detached-ref-name "$CI_COMMIT_REF_NAME"
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# ---------------------------------------------------------------------------
+# CONTAINER: SBOM + OS/library vulnerability scan of the app's Docker image.
+# Container scanning has its own dedicated command (`endorctl container scan`) and its own
+# runtime needs (a Docker daemon to build the image), so it does NOT extend .endor_base --
+# it runs on the docker image with a docker-in-docker service instead of python:3.10.
+#
+# Flow: build the image from the repo Dockerfile -> `docker save` it to a tar -> scan the tar.
+# Using --image-tar keeps the scan self-contained (no registry push needed) and --path .
+# associates the container findings with THIS repo + branch (same history as the code scans).
+# ---------------------------------------------------------------------------
+endor_container:
+  stage: security
+  image: docker:27-cli
+  services:
+    - docker:27-dind
+  variables:
+    # Standard GitLab docker-in-docker over TLS wiring.
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_CERTDIR: "/certs"
+    DOCKER_TLS_VERIFY: "1"
+    DOCKER_CERT_PATH: "/certs/client"
+    IMAGE_TAG: "python-vuln-app:$CI_COMMIT_SHORT_SHA"
+  before_script:
+    - apk add --no-cache ca-certificates curl git
+    - curl -sL https://api.endorlabs.com/download/latest/endorctl_linux_amd64 -o /usr/local/bin/endorctl
+    - chmod +x /usr/local/bin/endorctl
+    - endorctl --version
+  script:
+    # Build the app image from the repo Dockerfile, export it to a tar, then scan the tar.
+    - docker build -t "$IMAGE_TAG" .
+    - docker save "$IMAGE_TAG" -o image.tar
+    # --base-image-scan (default true) also scans the detected base image for a fuller picture.
+    - >
+      endorctl container scan --output-type summary
+      --image-tar image.tar
+      --path .
+      --detached-ref-name "$CI_COMMIT_REF_NAME"
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "schedule"
