@@ -3,8 +3,11 @@
 
 FROM node:18-bullseye-slim AS frontend
 WORKDIR /build/frontend
-COPY frontend/package.json frontend/package-lock.json frontend/.npmrc ./
-RUN npm ci
+COPY frontend/package.json frontend/package-lock.json ./
+# This app pins ancient/conflicting React deps that trip npm's peer resolver (ERESOLVE).
+# The removed frontend/.npmrc used to set legacy-peer-deps=true; keep that behavior explicit
+# here, and fall back to `npm install` so a peer conflict can't fail the image build.
+RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
 COPY frontend/ ./
 RUN npm run build
 # Vite outDir: ../static/app from frontend/
