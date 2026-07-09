@@ -9,20 +9,29 @@
 # add ANY scanner selector flag (--sast, --secrets, ...), the implicit dependency scan is no
 # longer included, so we ALWAYS pass --dependencies explicitly to keep SCA running alongside.
 #
-# Coverage model (see the jobs below):
-#   - endor_baseline : FULL SCA+SAST+secrets scan of the monitored default branch (source of
-#                      truth) + scheduled drift scans. Uses --as-default-branch so every main
-#                      scan rolls up under one branch history instead of creating orphan
-#                      "repository versions".
-#   - endor_mr       : diff-aware PR scan (SCA+SAST+secrets) on merge requests. Gates the change
-#                      and (optionally) comments on the MR. Never marks itself as the default branch.
+# Coverage model (all jobs are MANUAL / UI-triggered only -- see TRIGGERING below):
+#   - endor_baseline : FULL SCA+SAST+secrets scan. Uses --as-default-branch so the scanned
+#                      branch rolls up under one history instead of creating orphan
+#                      "repository versions". Pick the branch to scan in the Run pipeline dialog.
 #   - endor_container: builds the app image and runs a dedicated `endorctl container scan`,
 #                      associating the container findings with this repo's branch history.
+#   - endor_mr       : diff-aware MR gate (SCA+SAST+secrets). INERT under the manual-only
+#                      workflow below (MR pipelines are blocked); retained for when you graduate
+#                      to PR gating -- re-enable by adding merge_request_event to workflow:rules.
 #
-# NOTE: pushing directly to main only runs the baseline/container jobs. The MR job requires an
-#       actual merge request to exist, so demo the PR flow via a feature branch -> MR into main.
+# TRIGGERING: this pipeline is MANUAL-ONLY. The workflow:rules block below means GitLab ONLY
+# creates a pipeline when you click "Run pipeline" in the GitLab UI (CI_PIPELINE_SOURCE=web).
+# Pushes to main, merge requests, and other branches create NO pipeline at all, so this can
+# never interrupt normal developer workflows.
 stages:
   - security
+
+# Master switch: only create a pipeline for manual UI runs; everything else is a no-op.
+# To also allow scheduled drift scans later, add:  - if: $CI_PIPELINE_SOURCE == "schedule"
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - when: never
 
 # ---------------------------------------------------------------------------
 # Shared setup: base image, tool install, dependency install, and caching.
@@ -95,8 +104,8 @@ endor_baseline:
       --detached-ref-name "$CI_COMMIT_REF_NAME"
       --as-default-branch
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-    - if: $CI_PIPELINE_SOURCE == "schedule"
+    # Manual UI runs only (further guaranteed by workflow:rules above).
+    - if: $CI_PIPELINE_SOURCE == "web"
 
 # ---------------------------------------------------------------------------
 # MERGE REQUEST: diff-aware gate for proposed changes.
@@ -119,6 +128,8 @@ endor_mr:
       --pr-baseline "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
       --detached-ref-name "$CI_COMMIT_REF_NAME"
   rules:
+    # INERT while manual-only: workflow:rules above blocks MR pipelines, so this never fires.
+    # To enable the MR gate later, add this same condition to workflow:rules.
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 # ---------------------------------------------------------------------------
@@ -159,5 +170,5 @@ endor_container:
       --path .
       --detached-ref-name "$CI_COMMIT_REF_NAME"
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-    - if: $CI_PIPELINE_SOURCE == "schedule"
+    # Manual UI runs only (further guaranteed by workflow:rules above).
+    - if: $CI_PIPELINE_SOURCE == "web"
