@@ -1,16 +1,31 @@
-# Run Endor Labs scans from GitLab CI after pushing this GitHub-hosted repo to a GitLab remote.
+# Example GitLab CI pipeline: implement Endor Labs scanning via endorctl for SCA and SAST.
+# Drop this into a GitLab project to run dependency (SCA) and static analysis (SAST) scans
+# as part of your pipeline, with reachability-aware call graphs for Python and JavaScript/TS.
+#
+# Coverage model (see the two jobs below):
+#   - endor_baseline : FULL scan of the monitored default branch (source of truth) + scheduled
+#                      drift scans. Uses --as-default-branch so every main scan rolls up under
+#                      one branch history instead of creating orphan "repository versions".
+#   - endor_mr       : diff-aware PR scan on merge requests. Gates the change and (optionally)
+#                      comments on the MR. Never marks itself as the default branch.
+#
+# NOTE: pushing directly to main only runs endor_baseline. The MR job requires an actual
+#       merge request to exist, so demo the PR flow via a feature branch -> MR into main.
 stages:
   - security
 
-endorctl_scan:
+# ---------------------------------------------------------------------------
+# Shared setup: base image, tool install, dependency install, and caching.
+# Both real jobs `extends` this hidden template so the setup lives in one place.
+# ---------------------------------------------------------------------------
+.endor_base:
   stage: security
   image: python:3.10-bookworm
 
-  # Keep required Endor values in GitLab CI/CD variables, not in the repository.
-  # Required variables:
-  # - ENDOR_NAMESPACE
-  # - ENDOR_API_CREDENTIALS_KEY
-  # - ENDOR_API_CREDENTIALS_SECRET
+  # Keep required Endor values in GitLab CI/CD variables, not in the repository:
+  #   - ENDOR_NAMESPACE
+  #   - ENDOR_API_CREDENTIALS_KEY
+  #   - ENDOR_API_CREDENTIALS_SECRET
   variables:
     PIP_DISABLE_PIP_VERSION_CHECK: "1"
     # Keep npm's cache inside the project dir so GitLab can cache it between runs.
@@ -26,7 +41,6 @@ endorctl_scan:
       - .npm/
       - frontend/node_modules/
 
-  # Install the tools endorctl needs to inspect this mixed Python + npm demo app.
   before_script:
     - apt-get update
     - apt-get install -y --no-install-recommends ca-certificates curl git nodejs npm
@@ -44,32 +58,45 @@ endorctl_scan:
     # whether it can build JS/TS call graphs. Our typescript only lives in frontend/node_modules,
     # so root resolution fails and reachability gets disabled. Install the matching compiler
     # globally and expose it via NODE_PATH so the root-level require('typescript') succeeds.
-    # (Installing at the repo root instead would recreate a stray root npm package in the scan.)
     - npm install -g typescript@4.9.5
     - export NODE_PATH="$(npm root -g)"
     # Python reachability needs no install step: Endor resolves requirements.txt itself and
     # builds the call graph from the bookstore/ source already in the repo.
 
-  # Scan the full repo. Reachability/call-graph runs by default for every supported language;
-  # Python resolves from source, and the frontend now has node_modules so its call graph builds.
-  #
-  # GitLab checks out a DETACHED HEAD ("... as detached HEAD (ref is main)"), so endorctl can't
-  # read the branch name from git and otherwise records every commit as its own orphan version.
-  # --detached-ref-name feeds it the real ref name; on the default branch we also pass
-  # --as-default-branch so all main scans roll up under the monitored branch instead of piling
-  # up as separate "repository versions".
+# ---------------------------------------------------------------------------
+# BASELINE: the source of truth for the monitored default branch.
+# Runs on every push/merge to the default branch and on scheduled pipelines
+# (create the schedule in GitLab: CI/CD > Schedules, targeting main).
+# A scheduled full scan catches newly-disclosed CVEs even with no code change.
+# ---------------------------------------------------------------------------
+endor_baseline:
+  extends: .endor_base
   script:
-    - |
-      if [ "$CI_COMMIT_REF_NAME" = "$CI_DEFAULT_BRANCH" ]; then
-        endorctl scan --path . --output-type summary \
-          --detached-ref-name "$CI_COMMIT_REF_NAME" \
-          --as-default-branch
-      else
-        endorctl scan --path . --output-type summary \
-          --detached-ref-name "$CI_COMMIT_REF_NAME"
-      fi
-
-  # Run on merge requests and on branch pushes, including a manually pushed GitLab test branch.
+    # GitLab checks out a DETACHED HEAD, so feed endorctl the real ref name and mark it as the
+    # default branch so all main scans roll up under the monitored branch.
+    - >
+      endorctl scan --path . --output-type summary
+      --detached-ref-name "$CI_COMMIT_REF_NAME"
+      --as-default-branch
   rules:
-    - if: $CI_MERGE_REQUEST_ID
-    - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+# ---------------------------------------------------------------------------
+# MERGE REQUEST: diff-aware gate for proposed changes.
+# Compares against the target branch baseline; does NOT touch the monitored branch.
+# ---------------------------------------------------------------------------
+endor_mr:
+  extends: .endor_base
+  script:
+    # --pr marks this as a PR scan; --pr-baseline is the branch you're merging into.
+    # Add --pr-incremental to only re-analyze changed packages (faster, lighter reachability).
+    # Add --enable-pr-comments once the Endor GitLab SCM integration is connected, to post
+    # findings as inline MR comments.
+    - >
+      endorctl scan --path . --output-type summary
+      --pr
+      --pr-baseline "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+      --detached-ref-name "$CI_COMMIT_REF_NAME"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
