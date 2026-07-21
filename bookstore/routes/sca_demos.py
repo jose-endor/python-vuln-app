@@ -32,6 +32,8 @@ _HANDLERS = {
     "redis": lambda: sca_stubs.sca_redis_pool(request.args.get("url", "redis://127.0.0.1:1/0")),
     "pycryptodomex": lambda: sca_stubs.sca_cryptodomex_arc4(request.args.get("x", "x")),
     "jose": lambda: sca_stubs.sca_jose_header(request.args.get("t", "")),
+    "jose_decode": lambda: sca_stubs.sca_jose_decode(request.args.get("t", ""), request.args.get("key", "")),
+    "pyjwt_decode": lambda: sca_stubs.sca_pyjwt_decode(request.args.get("t", ""), request.args.get("key", "")),
     "httpx": lambda: str(sca_stubs.sca_httpx_async_status(request.args.get("u", "http://127.0.0.1:3333/"))),
     "protobuf": lambda: sca_stubs.sca_protobuf_empty(),
     "ujson": lambda: sca_stubs.sca_ujson_roundtrip(

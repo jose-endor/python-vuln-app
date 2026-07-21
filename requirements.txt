@@ -53,6 +53,10 @@ python-dateutil==2.8.2
 psycopg2-binary==2.9.9; python_version < "3.14"
 
 # Extra dependency surface (SCA); pinned to coexist with the Flask stack — prefer `pip install -r requirements.txt`.
+# VULN: Known Vulnerable Dependency — PyJWT 2.3.0, CVE-2022-29217 / GHSA-ffqj-6fqr-9h24 (HIGH):
+# key/algorithm confusion when `algorithms` is unspecified; fixed in 2.4.0. Reachable via jwt.decode
+# in bookstore/sinks/sca_stubs.py (sca_pyjwt_decode) -> exercised by GET /sca/run?k=pyjwt_decode.
+PyJWT==2.3.0
 oauthlib==3.2.2
 httplib2==0.22.0
 feedparser==6.0.10
