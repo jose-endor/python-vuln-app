@@ -32,6 +32,8 @@ from charset_normalizer import from_bytes
 from Cryptodome.Cipher import ARC4
 import defusedxml.ElementTree as DefusedET
 from jose import jwt
+from jose.exceptions import JOSEError
+import jwt as pyjwt  # PyJWT; distinct from python-jose's jwt submodule above
 from markupsafe import Markup
 from PIL import Image
 import pathlib2
@@ -131,6 +133,55 @@ def sca_cryptodomex_arc4(buf: str) -> str:
 def sca_jose_header(t: str) -> str:
     s = t or "eyJhbGciOiJub25lIn0.eyJzIjoidCJ9."
     return str(jwt.get_unverified_header(s or "."))
+
+
+# Demo verification material for the partner SSO token endpoint below.
+# A public key is stored as the "verify secret" — the exact anti-pattern the CVE exploits.
+_DEMO_JOSE_PUBLIC_KEY = (
+    "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBDemoOnlyPartnerSSOKey=="
+)
+_DEMO_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXJ0bmVyIn0."
+
+
+def sca_jose_decode(token: str, key: str) -> str:
+    """Partner SSO token verification (legacy integration).
+
+    Reachable call site for the python-jose signature-verification path.
+    """
+    # VULN: Known Vulnerable Dependency — python-jose 3.3.0, CVE-2024-33663 / GHSA-6c5p-j8vq-pqhj
+    # (algorithm confusion with OpenSSH ECDSA / non-standard keys; fixed in 3.4.0).
+    # jose.jwt.decode is the advisory's vulnerable function and is directly reachable from
+    # GET /sca/run?k=jose_decode, so reachability analysis records a REACHABLE_FUNCTION hit.
+    # Realistic mistake: verify an attacker-supplied token against an asymmetric public key while
+    # allowing BOTH symmetric (HS256) and asymmetric (RS256/ES256) algorithms in one call. That lets
+    # an attacker forge an HS256 token signed with the public key and pass verification.
+    verifying_key = key or _DEMO_JOSE_PUBLIC_KEY
+    try:
+        claims = jwt.decode(
+            token or _DEMO_JWT,
+            verifying_key,
+            algorithms=["HS256", "RS256", "ES256"],  # mixing HMAC + RSA/ECDSA enables confusion
+        )
+    except JOSEError as exc:
+        # Verification failures still exercise the vulnerable decode path.
+        return f"jose:{type(exc).__name__}"[:200]
+    return str(claims)[:200]
+
+
+def sca_pyjwt_decode(token: str, key: str) -> str:
+    """Newer partner SSO path built on PyJWT (parallel to the python-jose one)."""
+    # VULN: Known Vulnerable Dependency — PyJWT 2.3.0, CVE-2022-29217 / GHSA-ffqj-6fqr-9h24 (HIGH,
+    # algorithm/key confusion; fixed in 2.4.0). pyjwt.decode is the advisory's vulnerable function and
+    # is reachable from GET /sca/run?k=pyjwt_decode, so reachability records a REACHABLE_FUNCTION hit.
+    # Realistic mistake: decode without pinning `algorithms`, so an attacker controls the header `alg`
+    # and can verify an RS256 token as HS256 using the public key as the HMAC secret.
+    verifying_key = key or _DEMO_JOSE_PUBLIC_KEY
+    try:
+        claims = pyjwt.decode(token or _DEMO_JWT, verifying_key)  # missing algorithms= is the bug
+    except pyjwt.PyJWTError as exc:
+        # Decode failures still exercise the vulnerable path for reachability.
+        return f"pyjwt:{type(exc).__name__}"[:200]
+    return str(claims)[:200]
 
 
 async def _httpx_once(u: str) -> int:
