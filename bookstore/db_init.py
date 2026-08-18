@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 
 def _init_postgres() -> None:
-    import psycopg2  # SCA: driver in use when DATABASE_URL is set (Docker)
+    import psycopg2  # used when DATABASE_URL points at Postgres
 
     dsn = (os.environ.get("DATABASE_URL") or os.environ.get("INVENTORY_DSN") or "").strip()
     conn: Any = psycopg2.connect(dsn)

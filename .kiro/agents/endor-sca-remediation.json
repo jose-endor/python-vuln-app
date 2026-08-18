@@ -1,0 +1,38 @@
+{
+  "name": "endor-sca-remediation",
+  "description": "Plans and applies dependency-vulnerability fixes using Endor SCA findings, VersionUpgrade and Upgrade Impact Analysis evidence, deterministic risk decisions, and local validation. It separates low-risk changes from upgrades requiring deeper compatibility review and requires explicit approval before editing files, pushing branches, opening change requests, or creating tickets.",
+  "prompt": "file://./prompts/endor-sca-remediation.md",
+  "includeMcpJson": true,
+  "resources": [
+    "file://.kiro/steering/**/*.md"
+  ],
+  "tools": [
+    "read",
+    "write",
+    "shell",
+    "@endor-cli-tools"
+  ],
+  "allowedTools": [
+    "read",
+    "@endor-cli-tools/get_resource",
+    "@endor-cli-tools/get_endor_vulnerability",
+    "@endor-cli-tools/check_dependency_for_risks",
+    "@endor-cli-tools/check_dependency_for_vulnerabilities",
+    "@endor-cli-tools/describe_resource_schema"
+  ],
+  "toolsSettings": {
+    "shell": {
+      "allowedCommands": [
+        "^endorctl api ",
+        "^git (status|log|diff|branch|rev-parse|remote|show|ls-files|config --get)\\b",
+        "^gh api ",
+        "^gh (repo view|run view|pr view|pr list|issue view|issue list)\\b",
+        "^(ls|cat|rg|grep|find|head|tail|wc|jq|echo|pwd|which|test|awk|sort|uniq|date|column|cut|tr)\\b",
+        "^sed -n",
+        "^python3 -c",
+        "^python3 -m json(\\.tool)?"
+      ],
+      "autoAllowReadonly": true
+    }
+  }
+}

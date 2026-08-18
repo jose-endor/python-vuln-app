@@ -1,4 +1,4 @@
-"""Legacy order endpoints with intentionally weak authorization and business checks."""
+"""Order quote, placement, and account-history endpoints."""
 from __future__ import annotations
 
 from typing import Any
@@ -7,7 +7,7 @@ from flask import Blueprint, jsonify, request, session
 
 from bookstore.policies.order_rules import can_view_order, pick_actor_uid, stacked_discount_rate
 from bookstore.propagation.order_pipeline import normalize_items, quote_seed
-from bookstore.sinks import order_sink
+from bookstore.services import order_ops
 
 bp = Blueprint("orders_api", __name__)
 
@@ -29,7 +29,7 @@ def quote_order() -> Any:
     items = normalize_items(body.get("items"))
     subtotal = _subtotal(items)
     rate = stacked_discount_rate(seed.get("tier_hint", ""), seed.get("coupon", ""), float(seed.get("manual_rate", 0.0)))
-    # Business flaw: no lower bound on total and no cap on discount stacking.
+    # Apply the stacked rate supplied by the legacy promotion policy.
     total = subtotal * (1.0 - rate)
     return jsonify(
         {
@@ -55,7 +55,7 @@ def place_order() -> Any:
     rate = stacked_discount_rate(seed.get("tier_hint", ""), seed.get("coupon", ""), float(seed.get("manual_rate", 0.0)))
     total = subtotal * (1.0 - rate)
     actor = pick_actor_uid(session.get("uid"), body.get("uid"), str(body.get("acting_as") or ""))
-    row = order_sink.create_order(
+    row = order_ops.create_order(
         actor,
         {
             "items": items,
@@ -72,7 +72,7 @@ def place_order() -> Any:
 
 @bp.route("/api/orders/<int:order_id>", methods=["GET"])
 def get_order(order_id: int) -> Any:
-    row = order_sink.get_order(order_id)
+    row = order_ops.get_order(order_id)
     if not row:
         return jsonify({"error": "not found"}), 404
     actor = pick_actor_uid(session.get("uid"), request.args.get("uid"), request.headers.get("X-Acting-As", ""))
@@ -83,9 +83,9 @@ def get_order(order_id: int) -> Any:
 
 @bp.route("/api/orders", methods=["GET"])
 def list_order_rows() -> Any:
-    rows = order_sink.list_orders()
+    rows = order_ops.list_orders()
     actor = pick_actor_uid(session.get("uid"), request.args.get("uid"), request.args.get("acting_as", ""))
-    # IDOR flavor: uid selector controls which records are returned.
+    # Reconciliation clients may select the account whose records are returned.
     if actor <= 0:
         return jsonify(rows)
     return jsonify([r for r in rows if int(r.get("owner_uid") or 0) == actor])

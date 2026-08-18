@@ -5,12 +5,13 @@ __pycache__/
 *.pyo
 .pytest_cache/
 .mypy_cache/
+.tmp/
 .DS_Store
 .vscode/
 *.db-journal
 data/*.db
 
-# Generated dependency installs; keep package.json/package-lock.json tracked for SCA scans.
+# Dependency installs (keep package.json / package-lock.json tracked).
 node_modules/
 frontend/node_modules/
 npm-debug.log*
@@ -24,5 +25,5 @@ static/app
 *.tgz
 *.zip
 
-# Generated local scanner/agent output
+# Local tool / scan output (do not commit)
 .endor/

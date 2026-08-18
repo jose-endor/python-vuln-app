@@ -1,43 +1,55 @@
-# Stack & Spine Bookstore (research)
+# Stack & Spine Bookstore
 
-**This repository is a deliberately vulnerable test application** built for **application security (AppSec)** tooling: static analysis, SCA, secret scanning, container policy checks, and related demos. It **must not** be exposed to the internet, used for real data, or treated as a secure baseline. Intentional weaknesses include insecure code paths, dependency choices, and configuration (including Docker and compose).
+Online bookstore for browsing inventory, managing member accounts, and preparing order quotes. Includes a Flask API, React storefront, and SQLite persistence (optional remote DSN).
 
 ---
 
 ## Run with Docker (recommended)
 
-**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) with **Compose** available as either `docker compose` (plugin) or `docker-compose` (standalone).
+**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) with Compose (`docker compose` or `docker-compose`).
 
 From the project root:
 
 ```bash
 docker compose up --build
-# or, if the plugin is not available:
+# or:
 docker-compose up --build
 ```
 
-- **App URL:** [http://127.0.0.1:3333/](http://127.0.0.1:3333/) (only listens on the loopback interface in the default compose file).
-- **Storefront (SPA):** [http://127.0.0.1:3333/app](http://127.0.0.1:3333/app)
-- **Stop:** `Ctrl+C` in the foreground terminal, or in another shell: `docker compose down` / `docker-compose down`.
-- **Use another port:** set `PORT` in `docker-compose.yml` under `environment` and change the `ports` mapping (for example `127.0.0.1:9000:9000` with `PORT=9000`).
+| | |
+|---|---|
+| **App** | [http://127.0.0.1:3333/](http://127.0.0.1:3333/) |
+| **Storefront (SPA)** | [http://127.0.0.1:3333/app](http://127.0.0.1:3333/app) |
+| **Default port** | `3333` (loopback only in the default compose file) |
 
-**First run / data:** The container keeps SQLite on a **named volume** at `/data` (`app_state` in compose). Seeded **users and catalog** come from `data/users.json` and `data/inventory.json` on first import when the database is empty. The `./data` folder is mounted read-only into the app so you can edit those JSON files; to **re-seed** from them, remove the named volume and start again, for example:
+**Stop:** `Ctrl+C`, or `docker compose down` / `docker-compose down`.
+
+**Different port:** set `PORT` under `environment` in `docker-compose.yml` and update the `ports` mapping (for example `127.0.0.1:9000:9000` with `PORT=9000`).
+
+### Data and seeding
+
+SQLite lives on a named volume at `/data` (`app_state` in compose). On first start with an empty database, users and catalog are imported from `data/users.json` and `data/inventory.json`. The `./data` folder is mounted read-only so you can edit those JSON files; to re-seed, remove the volume and start again:
 
 ```bash
 docker compose down -v
 docker compose up --build
 ```
 
-**Default test accounts** (from `data/users.json`): **admin** / **admin**, **jordan** / **sunday**, **alex** / **hunter2**.
+### Seed accounts
+
+From `data/users.json`:
+
+| Username | Password |
+|----------|----------|
+| admin | admin |
+| jordan | sunday |
+| alex | hunter2 |
 
 ---
 
-## Run without Docker (local venv)
-
-Useful for quick iteration and for tooling that scans a plain checkout — **SAST / SCA** use your manifests and source; **container scanners** use `Dockerfile` / compose regardless of how you run Python.
+## Run locally (venv)
 
 ```bash
-cd python-vuln-app
 python3 -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
@@ -45,12 +57,34 @@ export INVENTORY_DB_PATH=./data/inventory.db   # optional; default is under proj
 python -m run
 ```
 
-Then open the same URLs as above. **Change port:** `export PORT=9000` then `python -m run`.
+Open the same URLs as above. Change port with `export PORT=9000` then `python -m run`.
 
-**Frontend:** To rebuild the React app: `cd frontend && npm ci && npm run build` (output goes under `static/app/`).
+**Frontend rebuild:** `cd frontend && npm ci && npm run build` (output under `static/app/`).
+
+### Optional auth process
+
+A separate auth process is available for local multi-service setups:
+
+```bash
+python -m run_auth
+```
+
+Defaults to port `5001`.
 
 ---
 
-## License / intent
+## Project layout
 
-Use only in isolated environments for security **research and product evaluation**. This is not a production application.
+| Path | Role |
+|------|------|
+| `bookstore/` | Flask application |
+| `frontend/` | React storefront (Vite) |
+| `data/` | Seed JSON and local SQLite path |
+| `static/app/` | Built SPA assets |
+| `Dockerfile` / `docker-compose.yml` | Container build and local stack |
+
+---
+
+## License
+
+See repository license terms. Intended for local development and evaluation of the Stack & Spine Bookstore stack.

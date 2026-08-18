@@ -1,0 +1,56 @@
+{
+  "name": "endor-ez-scan",
+  "description": "One-button \"ez mode\" Endor Labs scanner. Detects which Endor scan services the tenant is entitled to (dependencies, vulnerabilities, secrets, SAST, AI SAST, GitHub Actions) and then runs the broadest supported scan in a single pass with full call-graph reachability, returning a prioritized, reachability-aware result. Use when the user says \"ez scan\", \"scan everything\", \"run all my scans\", \"one button scan\", or \"full scan with reachability\". This agent may run scans but must not edit files, push branches, open PRs/MRs, install packages, or mutate Endor state.",
+  "prompt": "file://./prompts/endor-ez-scan.md",
+  "includeMcpJson": true,
+  "resources": [
+    "file://.kiro/steering/**/*.md"
+  ],
+  "tools": [
+    "read",
+    "shell",
+    "@endor-cli-tools"
+  ],
+  "allowedTools": [
+    "read",
+    "@endor-cli-tools/get_resource",
+    "@endor-cli-tools/get_endor_vulnerability",
+    "@endor-cli-tools/check_dependency_for_risks",
+    "@endor-cli-tools/check_dependency_for_vulnerabilities",
+    "@endor-cli-tools/describe_resource_schema",
+    "@endor-cli-tools/scan",
+    "@endor-cli-tools/security_review"
+  ],
+  "toolsSettings": {
+    "shell": {
+      "allowedCommands": [
+        "^endorctl api ",
+        "^git (status|log|diff|branch|rev-parse|remote|show|ls-files|config --get)\\b",
+        "^gh api ",
+        "^gh (repo view|run view|pr view|pr list|issue view|issue list)\\b",
+        "^(ls|cat|rg|grep|find|head|tail|wc|jq|echo|pwd|which|test|awk|sort|uniq|date|column|cut|tr)\\b",
+        "^sed -n",
+        "^python3 -c",
+        "^python3 -m json(\\.tool)?",
+        "^(npx (-y )?)?endorctl scan\\b"
+      ],
+      "deniedCommands": [
+        "(^| )git (push|commit|checkout|merge|rebase|reset|revert|restore|stash|tag|add)\\b",
+        "(^| )gh (pr|issue) (create|close|edit|comment|merge|review|ready|reopen)\\b",
+        "(^| )gh release (create|delete|edit)\\b",
+        "(^| )gh api .*(-X|--method) (POST|PUT|PATCH|DELETE)\\b",
+        "(^| )(pip|pipx) install\\b",
+        "(^| )(npm|pnpm|yarn|bun) (add|install|i)\\b",
+        "(^| )(poetry|uv|cargo) add\\b",
+        "(^| )go get\\b",
+        "(^| )gem install\\b",
+        "(^| )bundle add\\b",
+        "(^| )(mvn|gradle)\\b",
+        "(^| )(rm|mv|cp|chmod|chown|ln|tee)\\b",
+        "(^| )sudo\\b",
+        " >>? "
+      ],
+      "autoAllowReadonly": true
+    }
+  }
+}

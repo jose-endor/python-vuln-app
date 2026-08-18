@@ -11,3 +11,11 @@ data/*.db
 # Frontend deps live only in the Node build stage; shrink context
 frontend/node_modules
 static/app
+.tmp
+.kiro
+kiro-agent-kit
+demo
+*.tar
+*.tar.gz
+*.tgz
+*.zip

@@ -1,11 +1,11 @@
-"""Fetch URL — SSRF via requests."""
+"""Fetch URL — remote HTTP get for partner/content URLs."""
 from __future__ import annotations
 
 from flask import Blueprint, current_app, jsonify
 
 from bookstore.propagation import url_pipeline
-from bookstore.sinks import http_client_sink
-from bookstore.sources import book_input
+from bookstore.services import remote_fetch
+from bookstore.inputs import book_input
 
 bp = Blueprint("fetcher", __name__)
 
@@ -16,4 +16,4 @@ def fetcher():
     url = url_pipeline.normalize_incoming_url(u)
     if current_app.debug:
         pass
-    return jsonify({"url": url, "body": http_client_sink.http_get_user(url)})
+    return jsonify({"url": url, "body": remote_fetch.http_get_user(url)})

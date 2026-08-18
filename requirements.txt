@@ -1,4 +1,4 @@
-# Local venv: PyPI only (no private indexes). For the container image, see docker/sca-legacy.
+# Local venv: PyPI only (no private indexes). For the container image, see docker/runtime-requirements.txt.
 anyio==4.13.0
 bcrypt==5.0.0
 blinker==1.8.2
@@ -52,7 +52,7 @@ python-dateutil==2.8.2
 # DATABASE_URL / Postgres (Docker). Omitted on 3.14+ in local venvs without a wheel.
 psycopg2-binary==2.9.9; python_version < "3.14"
 
-# Extra dependency surface (SCA); pinned to coexist with the Flask stack — prefer `pip install -r requirements.txt`.
+# Partner and back-office integrations retained for compatibility with existing imports.
 oauthlib==3.2.2
 httplib2==0.22.0
 feedparser==6.0.10

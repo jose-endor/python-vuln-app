@@ -1,0 +1,8 @@
+{
+  "source_repository": "https://github.com/endorlabs/ai-plugins",
+  "package_version": "2.2.1",
+  "source_commit": "adc5aa4a357cbfdc666fd3771e799ec58cae1871",
+  "host": "kiro",
+  "upstream_agent_count": 12,
+  "local_recipe_count": 1
+}

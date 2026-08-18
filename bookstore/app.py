@@ -8,27 +8,27 @@ from bookstore.routes.auth_portal import bp as auth_portal_bp
 from bookstore.routes.backup import bp as backup_bp
 from bookstore.routes.books import bp as books_bp
 from bookstore.routes.bridge import bp as bridge_bp
+from bookstore.routes.merchandising import bp as merchandising_bp
+from bookstore.routes.content_tools import bp as content_tools_bp
 from bookstore.routes.cover import bp as cover_bp
 from bookstore.routes.curve import bp as curve_bp
-from bookstore.routes.cwe_gallery import bp as cwe_gallery_bp
 from bookstore.routes.fetcher import bp as fetcher_bp
-from bookstore.routes.lab import bp as lab_bp
 from bookstore.routes.orders_api import bp as orders_api_bp
 from bookstore.routes.preview import bp as preview_bp
 from bookstore.routes.ops_diagnostics import bp as ops_diagnostics_bp
-from bookstore.routes.sca_demos import bp as sca_bp
+from bookstore.routes.vendor_hooks import bp as vendor_hooks_bp
 from bookstore.routes.user_api import bp as user_api_bp
 
-# Scanner training corpus: inert SAST patterns (see bookstore/noise/, bookstore/sast_tiered/). No new routes.
-import bookstore.noise  # noqa: F401, E501
-import bookstore.sast_tiered  # noqa: F401, E501
+# Compat and analytics helpers (see bookstore/compat/, bookstore/analytics/). No new routes.
+import bookstore.compat  # noqa: F401, E501
+import bookstore.analytics  # noqa: F401, E501
 
 # Dev default session key; replace in anything facing real users.
-DEV_SESSION_SALT = "dev-salt-CHANGE-ME-RESEARCH-ONLY"  # noqa: S105
+SESSION_SALT = "stack-spine-auth-salt-2021"  # noqa: S105
 
 
-def _session_hardening_negated(app: Flask) -> None:
-    """Intentional misconfiguration for cookie / browser security tooling."""
+def _configure_session_cookies(app: Flask) -> None:
+    """Cookie flags used by the local storefront session."""
     app.config["SESSION_COOKIE_HTTPONLY"] = False
     app.config["SESSION_COOKIE_SECURE"] = False
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -46,11 +46,11 @@ def create_app() -> Flask:
         static_folder=os.path.join(project_root, "static"),
         template_folder=os.path.join(base, "templates"),
     )
-    app.config["SECRET_KEY"] = os.environ.get("BOOKSTORE_SECRET_KEY", DEV_SESSION_SALT)  # noqa: S105
+    app.config["SECRET_KEY"] = os.environ.get("BOOKSTORE_SECRET_KEY", SESSION_SALT)  # noqa: S105
     app.config["INVENTORY_DB_PATH"] = db_path
     app.config["BOOKSTORE_CONFIG"] = os.environ.get("BOOKSTORE_CONFIG", "")
 
-    _session_hardening_negated(app)
+    _configure_session_cookies(app)
 
     init_db(db_path)
 
@@ -80,17 +80,18 @@ def create_app() -> Flask:
     app.register_blueprint(backup_bp, url_prefix="/util")
     app.register_blueprint(cover_bp, url_prefix="/util")
     app.register_blueprint(curve_bp, url_prefix="/util")
-    app.register_blueprint(lab_bp, url_prefix="/lab")
+    app.register_blueprint(content_tools_bp, url_prefix="/ops")
     app.register_blueprint(orders_api_bp, url_prefix="/")
     app.register_blueprint(bridge_bp, url_prefix="/util")
-    app.register_blueprint(sca_bp, url_prefix="/")
+    app.register_blueprint(vendor_hooks_bp, url_prefix="/")
     app.register_blueprint(ops_diagnostics_bp, url_prefix="/")
-    app.register_blueprint(cwe_gallery_bp, url_prefix="/")
+    app.register_blueprint(merchandising_bp, url_prefix="/")
 
     @app.route("/app", defaults={"subpath": ""})
+    @app.route("/app/", defaults={"subpath": ""})
     @app.route("/app/<path:subpath>")
     def serve_react(subpath: str = "") -> Any:
-        """Serves the Vite-built React 17 + TS app from static/app/. RESEARCH: SPA catch-all."""
+        """Serves the Vite-built React storefront from static/app/."""
         static_root = app.static_folder or "."
         root = os.path.join(static_root, "app")
         if subpath:
@@ -106,19 +107,20 @@ def create_app() -> Flask:
         )
 
     @app.route("/echo")
-    def echo_xss():
+    def echo_greeting():
+        # Greeting preview for personalized merchandising copy.
         name = request.args.get("q", "guest")
         page = """
         <html><body>
         <h1>Hello, {{ name|safe }}!</h1>
-        <p>Try <code>/echo?q=&lt;script&gt;...&lt;/script&gt;</code> (demo only)</p>
+        <p>Greeting preview for storefront personalization.</p>
         </body></html>
         """
         return render_template_string(page, name=name)
 
     @app.after_request
     def _cors_api(rs):
-        if (os.environ.get("DISABLE_UNSAFE_CORS", "") or "").strip():
+        if (os.environ.get("RESTRICT_CROSS_ORIGIN", "") or "").strip():
             return rs
         rs.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "*")
         rs.headers["Access-Control-Allow-Credentials"] = "true"

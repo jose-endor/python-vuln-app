@@ -205,11 +205,11 @@ input.inline,
   gap: 0.4rem;
 }
 
-.cwe-panel {
+.workbench-panel {
   margin-top: 1.5rem;
 }
 
-.cwe-output {
+.workbench-output {
   min-height: 2rem;
   margin-top: 0.75rem;
   padding: 0.5rem;

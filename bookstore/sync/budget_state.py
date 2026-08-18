@@ -1,4 +1,4 @@
-"""Numeric caps used at sync points before resource-heavy sinks."""
+"""Numeric caps used at sync points before resource-heavy operations."""
 from __future__ import annotations
 
 

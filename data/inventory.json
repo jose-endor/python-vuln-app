@@ -2,124 +2,124 @@
   "version": 1,
   "books": [
     {
-      "title": "Pride and SQL Injection",
-      "author": "Jane AUSTINjection",
+      "title": "Pride and Prejudice",
+      "author": "Jane Austen",
       "isbn": "978-0-31-234454-2",
-      "cover_path": "covers/stick-breach.svg",
+      "cover_path": "covers/pride.svg",
       "category": "Classics",
-      "summary": "A genteel estate, a dramatic query, and one very unfortunate WHERE clause."
+      "summary": "Elizabeth Bennet navigates manners, marriage, and misunderstanding in Regency England."
     },
     {
-      "title": "The Picture of Dorian XSS",
-      "author": "Oscar Wildcard",
+      "title": "The Picture of Dorian Gray",
+      "author": "Oscar Wilde",
       "isbn": "978-0-59-313520-4",
-      "cover_path": "covers/stick-xss.svg",
+      "cover_path": "covers/dorian.svg",
       "category": "Gothic",
-      "summary": "His face stays flawless while his comment section descends into chaos."
+      "summary": "A handsome young man remains ageless while his portrait bears every secret of his life."
     },
     {
-      "title": "Moby-Drop Table",
-      "author": "Herman Shellville",
+      "title": "Moby-Dick",
+      "author": "Herman Melville",
       "isbn": "978-0-44-101359-3",
-      "cover_path": "covers/stick-shell.svg",
+      "cover_path": "covers/moby.svg",
       "category": "Adventure",
-      "summary": "Captain Ahab hunts a whale and accidentally executes everything after a semicolon."
+      "summary": "Captain Ahab’s obsessive hunt for the white whale drives a crew toward the edge of the world."
     },
     {
-      "title": "Great Expectations of Input Validation",
-      "author": "Charles Sanitized",
+      "title": "Great Expectations",
+      "author": "Charles Dickens",
       "isbn": "978-0-13-475759-9",
-      "cover_path": "covers/stick-csrf.svg",
+      "cover_path": "covers/expectations.svg",
       "category": "Classics",
-      "summary": "Young Pip rises in society, but never checks length, type, or intent."
+      "summary": "Young Pip rises from the marshes toward fortune, love, and a mysterious benefactor."
     },
     {
-      "title": "War and Patch Management",
-      "author": "Leo Tolst-OWASP",
+      "title": "War and Peace",
+      "author": "Leo Tolstoy",
       "isbn": "978-1-19-124332-0",
-      "cover_path": "covers/stick-deserialize.svg",
+      "cover_path": "covers/war.svg",
       "category": "History",
-      "summary": "Epic armies march while security updates wait politely for next quarter."
+      "summary": "Families and empires collide across Napoleon’s invasion of Russia in a sweeping epic."
     },
     {
-      "title": "The Count of Monte Crypto",
-      "author": "Alexandre Dumas-key",
+      "title": "The Count of Monte Cristo",
+      "author": "Alexandre Dumas",
       "isbn": "978-1-93-435655-1",
-      "cover_path": "covers/stick-secrets.svg",
+      "cover_path": "covers/monte.svg",
       "category": "Adventure",
-      "summary": "A wrongful conviction, a hidden wallet file, and revenge paid in private keys."
+      "summary": "Wrongfully imprisoned, Edmond Dantès returns with a new identity and a patient plan for justice."
     },
     {
-      "title": "A Tale of Two Sessions",
-      "author": "Charles Dick-Session",
+      "title": "A Tale of Two Cities",
+      "author": "Charles Dickens",
       "isbn": "978-0-20-183595-3",
-      "cover_path": "covers/stick-csrf.svg",
+      "cover_path": "covers/expectations.svg",
       "category": "Classics",
-      "summary": "It was the best of logins, it was the worst of cookie flags."
+      "summary": "London and Paris are bound by love, loyalty, and sacrifice during the French Revolution."
     },
     {
-      "title": "Crime and Credential Leaks",
-      "author": "Fyodor Dostoev-key",
+      "title": "Crime and Punishment",
+      "author": "Fyodor Dostoevsky",
       "isbn": "978-0-13-235088-4",
-      "cover_path": "covers/stick-secrets.svg",
+      "cover_path": "covers/monte.svg",
       "category": "Drama",
-      "summary": "A moral crisis unfolds after someone commits .env to main."
+      "summary": "A troubled student confronts guilt, conscience, and redemption after a desperate crime."
     },
     {
-      "title": "The Catcher in the Cross-Site",
-      "author": "J.D. SSOlinger",
+      "title": "The Catcher in the Rye",
+      "author": "J.D. Salinger",
       "isbn": "978-0-45-152493-5",
-      "cover_path": "covers/stick-xss.svg",
+      "cover_path": "covers/dorian.svg",
       "category": "Fiction",
-      "summary": "Holden wants to protect the kids; the browser wants to execute user input."
+      "summary": "Holden Caulfield wanders New York, wary of phoniness and protective of childhood innocence."
     },
     {
-      "title": "Brave New World-Writable",
-      "author": "Aldous Hux-Rootly",
+      "title": "Brave New World",
+      "author": "Aldous Huxley",
       "isbn": "978-0-06-231610-3",
-      "cover_path": "covers/stick-overflow.svg",
+      "cover_path": "covers/brave.svg",
       "category": "Dystopian",
-      "summary": "Everything is perfectly controlled except permissions, which are 777 forever."
+      "summary": "In a meticulously engineered future, individuality collides with comfort and control."
     },
     {
-      "title": "One Flew Over the CSRF Nest",
-      "author": "Ken Keseycloak",
+      "title": "One Flew Over the Cuckoo's Nest",
+      "author": "Ken Kesey",
       "isbn": "978-0-25-300060-0",
-      "cover_path": "covers/stick-csrf.svg",
+      "cover_path": "covers/expectations.svg",
       "category": "Drama",
-      "summary": "A rebel clicks one harmless link and the nurse account performs a transfer."
+      "summary": "A rebellious new patient challenges the rigid order of a psychiatric ward."
     },
     {
-      "title": "Around the URL in 80 Requests",
-      "author": "Jules Vernetcat",
+      "title": "Around the World in Eighty Days",
+      "author": "Jules Verne",
       "isbn": "978-0-73-521129-2",
-      "cover_path": "covers/stick-ssrf.svg",
+      "cover_path": "covers/around.svg",
       "category": "Adventure",
-      "summary": "A whirlwind itinerary that somehow includes the metadata service."
+      "summary": "Phileas Fogg wagers that he can circle the globe in eighty days—trains, steamers, and all."
     },
     {
-      "title": "The Fellowship of the Ring Buffer",
-      "author": "J.R.R. Token",
+      "title": "The Fellowship of the Ring",
+      "author": "J.R.R. Tolkien",
       "isbn": "978-1-94-104800-0",
-      "cover_path": "covers/stick-overflow.svg",
+      "cover_path": "covers/brave.svg",
       "category": "Fantasy",
-      "summary": "Nine brave devs walk into production with a fixed-size array and no fear."
+      "summary": "Nine companions set out from the Shire to carry a perilous ring toward Mordor."
     },
     {
-      "title": "Alice in Null-Pointer Land",
-      "author": "Lewis Carollback",
+      "title": "Alice's Adventures in Wonderland",
+      "author": "Lewis Carroll",
       "isbn": "978-0-14-143951-8",
-      "cover_path": "covers/stick-deserialize.svg",
+      "cover_path": "covers/war.svg",
       "category": "Fantasy",
-      "summary": "Down the rabbit hole where every object is mysteriously None."
+      "summary": "Alice follows a White Rabbit into a topsy-turvy world of riddles, queens, and tea parties."
     },
     {
-      "title": "The Old Man and the Phish",
-      "author": "Ernest Spoofingway",
+      "title": "The Old Man and the Sea",
+      "author": "Ernest Hemingway",
       "isbn": "978-0-81-296358-5",
-      "cover_path": "covers/stick-breach.svg",
+      "cover_path": "covers/pride.svg",
       "category": "Classics",
-      "summary": "He can fight the sea, but can he resist a fake password reset email?"
+      "summary": "An aging Cuban fisherman battles a giant marlin far from shore in a quiet test of endurance."
     }
   ]
 }

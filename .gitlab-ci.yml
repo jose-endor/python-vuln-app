@@ -1,28 +1,28 @@
-# Example GitLab CI pipeline: implement broad Endor Labs asset coverage via endorctl.
-# Drop this into a GitLab project to run, in one pipeline:
-#   - SCA  : reachability-aware dependency scanning (Python + JavaScript/TS call graphs)
-#   - SAST : static analysis of first-party source code (Opengrep-based)
-#   - Secrets : leaked-credential detection in the checked-out tree
-#   - Container : image SBOM + OS/library vuln scan of the app's Docker image
+# Example GitLab CI pipeline for Endor Labs coverage via endorctl.
+# Jobs cover dependency analysis, first-party static analysis, secrets detection,
+# and container image analysis for this repository.
 #
-# IMPORTANT endorctl behavior: a bare `endorctl scan` defaults to SCA only. As soon as you
-# add ANY scanner selector flag (--sast, --secrets, ...), the implicit dependency scan is no
-# longer included, so we ALWAYS pass --dependencies explicitly to keep SCA running alongside.
+# IMPORTANT endorctl behavior: a bare `endorctl scan` defaults to dependency scanning
+# only. As soon as you add ANY analysis selector flag (--sast, --secrets, ...), the
+# implicit dependency scan is no longer included, so we ALWAYS pass --dependencies
+# explicitly to keep dependency analysis running alongside.
 #
 # Coverage model (all jobs are MANUAL / UI-triggered only -- see TRIGGERING below):
-#   - endor_baseline : FULL SCA+SAST+secrets scan. Uses --as-default-branch so the scanned
-#                      branch rolls up under one history instead of creating orphan
-#                      "repository versions". Pick the branch to scan in the Run pipeline dialog.
-#   - endor_container: builds the app image and runs a dedicated `endorctl container scan`,
-#                      associating the container findings with this repo's branch history.
-#   - endor_mr       : diff-aware MR gate (SCA+SAST+secrets). INERT under the manual-only
-#                      workflow below (MR pipelines are blocked); retained for when you graduate
-#                      to PR gating -- re-enable by adding merge_request_event to workflow:rules.
+#   - endor_baseline : full dependency + SAST + secrets scan. Uses --as-default-branch
+#                      so the scanned branch rolls up under one history instead of
+#                      creating orphan repository versions. Pick the branch to scan
+#                      in the Run pipeline dialog.
+#   - endor_container: builds the app image and runs `endorctl container scan`,
+#                      associating container findings with this repo's branch history.
+#   - endor_mr       : diff-aware MR gate (dependencies + SAST + secrets). INERT under
+#                      the manual-only workflow below (MR pipelines are blocked); retained
+#                      for when you graduate to PR gating -- re-enable by adding
+#                      merge_request_event to workflow:rules.
 #
-# TRIGGERING: this pipeline is MANUAL-ONLY. The workflow:rules block below means GitLab ONLY
-# creates a pipeline when you click "Run pipeline" in the GitLab UI (CI_PIPELINE_SOURCE=web).
-# Pushes to main, merge requests, and other branches create NO pipeline at all, so this can
-# never interrupt normal developer workflows.
+# TRIGGERING: this pipeline is MANUAL-ONLY. The workflow:rules block below means GitLab
+# ONLY creates a pipeline when you click "Run pipeline" in the GitLab UI
+# (CI_PIPELINE_SOURCE=web). Pushes to main, merge requests, and other branches create
+# NO pipeline at all, so this does not interrupt normal developer workflows.
 stages:
   - security
 
@@ -50,7 +50,7 @@ workflow:
     # Keep npm's cache inside the project dir so GitLab can cache it between runs.
     npm_config_cache: "$CI_PROJECT_DIR/.npm"
 
-  # Cache the frontend install so we don't reinstall ~900 packages every pipeline.
+  # Cache the frontend install so we don't reinstall packages every pipeline.
   # Keyed on the lockfile: cache is reused until dependencies actually change.
   cache:
     key:
@@ -66,36 +66,35 @@ workflow:
     - curl -sL https://api.endorlabs.com/download/latest/endorctl_linux_amd64 -o /usr/local/bin/endorctl
     - chmod +x /usr/local/bin/endorctl
     - endorctl --version
-    # JS/TS reachability: Endor needs node_modules (incl. @types/* dev deps) present to build
-    # the frontend call graph. This app pins ancient/conflicting packages, so strict installs
-    # hit ERESOLVE — force legacy peer resolution and fall back to `install` so a peer conflict
-    # never fails the whole scan. `npm ci` is preferred (deterministic) when the lockfile allows.
+    # JS/TS reachability: Endor needs node_modules (incl. @types/* dev deps) present to
+    # build the frontend call graph. Peer conflicts can hit ERESOLVE — force legacy peer
+    # resolution and fall back to `install` so a peer conflict never fails the whole job.
+    # `npm ci` is preferred (deterministic) when the lockfile allows.
     - >
       npm --prefix frontend ci --prefer-offline --no-audit --no-fund --legacy-peer-deps
       || npm --prefix frontend install --no-audit --no-fund --legacy-peer-deps
-    # endorctl runs its host-check from the repo ROOT and resolves `typescript` there to decide
-    # whether it can build JS/TS call graphs. Our typescript only lives in frontend/node_modules,
-    # so root resolution fails and reachability gets disabled. Install the matching compiler
-    # globally and expose it via NODE_PATH so the root-level require('typescript') succeeds.
+    # endorctl runs its host-check from the repo ROOT and resolves `typescript` there to
+    # decide whether it can build JS/TS call graphs. Our typescript only lives in
+    # frontend/node_modules, so root resolution fails and reachability gets disabled.
+    # Install the matching compiler globally and expose it via NODE_PATH so the root-level
+    # require('typescript') succeeds.
     - npm install -g typescript@4.9.5
     - export NODE_PATH="$(npm root -g)"
     # Python reachability needs no install step: Endor resolves requirements.txt itself and
     # builds the call graph from the bookstore/ source already in the repo.
 
 # ---------------------------------------------------------------------------
-# BASELINE: the source of truth for the monitored default branch.
-# Runs on every push/merge to the default branch and on scheduled pipelines
-# (create the schedule in GitLab: CI/CD > Schedules, targeting main).
-# A scheduled full scan catches newly-disclosed CVEs even with no code change.
+# BASELINE: source of truth for the monitored default branch.
 # ---------------------------------------------------------------------------
 endor_baseline:
   extends: .endor_base
   script:
-    # GitLab checks out a DETACHED HEAD, so feed endorctl the real ref name and mark it as the
-    # default branch so all main scans roll up under the monitored branch.
-    #   --dependencies : reachability-aware SCA (must be explicit once other scanners are on)
-    #   --sast         : first-party source code static analysis
-    #   --secrets      : leaked-credential detection across the checked-out tree
+    # GitLab checks out a DETACHED HEAD, so feed endorctl the real ref name and mark it as
+    # the default branch so all main scans roll up under the monitored branch.
+    #   --dependencies : reachability-aware dependency analysis (must be explicit once
+    #                    other analysis flags are on)
+    #   --sast         : first-party source static analysis
+    #   --secrets      : credential detection across the checked-out tree
     - >
       endorctl scan --path . --output-type summary
       --dependencies
@@ -115,8 +114,8 @@ endor_mr:
   extends: .endor_base
   script:
     # --pr marks this as a PR scan; --pr-baseline is the branch you're merging into.
-    # Same broad coverage as the baseline (SCA + SAST + secrets) but scoped as a PR gate.
-    # Add --pr-incremental to only re-analyze changed packages (faster, lighter reachability).
+    # Same coverage as the baseline (dependencies + SAST + secrets) but scoped as a PR gate.
+    # Add --pr-incremental to only re-analyze changed packages (faster).
     # Add --enable-pr-comments once the Endor GitLab SCM integration is connected, to post
     # findings as inline MR comments.
     - >
@@ -133,14 +132,12 @@ endor_mr:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 # ---------------------------------------------------------------------------
-# CONTAINER: SBOM + OS/library vulnerability scan of the app's Docker image.
-# Container scanning has its own dedicated command (`endorctl container scan`) and its own
-# runtime needs (a Docker daemon to build the image), so it does NOT extend .endor_base --
-# it runs on the docker image with a docker-in-docker service instead of python:3.10.
+# CONTAINER: SBOM + OS/library analysis of the app's Docker image.
+# Uses `endorctl container scan` with docker-in-docker (does not extend .endor_base).
 #
-# Flow: build the image from the repo Dockerfile -> `docker save` it to a tar -> scan the tar.
-# Using --image-tar keeps the scan self-contained (no registry push needed) and --path .
-# associates the container findings with THIS repo + branch (same history as the code scans).
+# Flow: build the image from the repo Dockerfile -> `docker save` to a tar -> scan the tar.
+# Using --image-tar keeps the scan self-contained (no registry push) and --path .
+# associates container findings with THIS repo + branch.
 # ---------------------------------------------------------------------------
 endor_container:
   stage: security
@@ -153,17 +150,17 @@ endor_container:
     DOCKER_TLS_CERTDIR: "/certs"
     DOCKER_TLS_VERIFY: "1"
     DOCKER_CERT_PATH: "/certs/client"
-    IMAGE_TAG: "python-vuln-app:$CI_COMMIT_SHORT_SHA"
+    IMAGE_TAG: "stack-and-spine:$CI_COMMIT_SHORT_SHA"
   before_script:
     - apk add --no-cache ca-certificates curl git
     - curl -sL https://api.endorlabs.com/download/latest/endorctl_linux_amd64 -o /usr/local/bin/endorctl
     - chmod +x /usr/local/bin/endorctl
     - endorctl --version
   script:
-    # Build the app image from the repo Dockerfile, export it to a tar, then scan the tar.
+    # Build the app image, export to a tar, then analyze the tar.
     - docker build -t "$IMAGE_TAG" .
     - docker save "$IMAGE_TAG" -o image.tar
-    # --base-image-scan (default true) also scans the detected base image for a fuller picture.
+    # --base-image-scan (default true) also analyzes the detected base image.
     - >
       endorctl container scan --output-type summary
       --image-tar image.tar

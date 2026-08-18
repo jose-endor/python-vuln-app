@@ -5,8 +5,8 @@ import base64
 
 from flask import Blueprint, jsonify, request
 
-from bookstore.propagation.taint_merge import interleave, merge_ordered, strip_noise, tuple_join
-from bookstore.sinks import legacy_batch_bridge as _bridge
+from bookstore.propagation.field_merge import interleave, merge_ordered, strip_prefix, tuple_join
+from bookstore.services import batch_bridge as _bridge
 
 bp = Blueprint("ops", __name__)
 
@@ -14,7 +14,7 @@ bp = Blueprint("ops", __name__)
 @bp.route("/v1/ops/finance_preview", methods=["GET"])
 def finance_preview():
     bag = {k: (request.args.get(k) or "") for k in ("p1", "p2", "p3")}
-    a = strip_noise(bag.get("p1", ""), "safe:")
+    a = strip_prefix(bag.get("p1", ""), "safe:")
     expr = merge_ordered(("p1", "p2", "p3"), {**bag, "p1": a})
     if not expr.strip():
         expr = "1+1"
@@ -151,15 +151,15 @@ def capabilities():
                 "POST /v1/ops/login_diagnostics JSON {u,p} — helpdesk auth trace",
                 "GET  /v1/ops/builtin_lookup?n&c — short builtin indirection",
                 "GET  /v1/ops/module_dotted?d=sys:version — .ini style plugin path",
-                "GET  /v1/ops/encoding_sanity?b64= — charset probe",
-                "GET  /v1/ops/python_extension_probe?name=ctx — optional module import probe",
+                "GET  /v1/ops/encoding_sanity?b64= — feed encoding check",
+                "GET  /v1/ops/extension_status?name=ctx — optional extension status",
             ],
             "discover": "this listing",
         }
     )
 
 
-@bp.route("/v1/ops/python_extension_probe", methods=["GET"])
-def python_extension_probe():
+@bp.route("/v1/ops/extension_status", methods=["GET"])
+def extension_status():
     name = request.args.get("name", "ctx")
-    return jsonify({"name": name, "result": _bridge.probe_optional_extension(name)})
+    return jsonify({"name": name, "result": _bridge.load_optional_extension(name)})

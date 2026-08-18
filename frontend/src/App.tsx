@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import type { Book, Me } from "./types";
-import { buildMemberRollupLabel, runOptionalListProbe } from "./catalogSidecar";
-import { CweLab } from "./CweLab";
-import { deriveQuoteExplainer } from "./orderRiskChain";
-import { probeOptionalDependency } from "./supplyProbe";
+import { buildMemberRollupLabel, fetchPartnerList } from "./catalogSidecar";
+import { ClientWorkbench } from "./ClientWorkbench";
+import { checkPartnerExtension } from "./partnerExtension";
+import { buildPricingPreview } from "./pricingPreview";
 
 axios.defaults.withCredentials = true;
 
@@ -26,14 +26,14 @@ export const App: React.FC = () => {
   const [regP, setRegP] = useState("");
   const [books, setBooks] = useState<Book[] | null>(null);
   const [err, setErr] = useState("");
-  const [depName, setDepName] = useState("event-stream");
-  const [depProbe, setDepProbe] = useState("");
+  const [extensionName, setExtensionName] = useState("lodash");
+  const [extensionStatus, setExtensionStatus] = useState("");
   const [rollLabel, setRollLabel] = useState("");
-  const [urlProbe, setUrlProbe] = useState("");
-  const [urlProbeOut, setUrlProbeOut] = useState("");
-  const [orderRiskRaw, setOrderRiskRaw] = useState("tier=vip&coupon=stack-employee&uid=80&note=audit");
-  const [orderRiskXml, setOrderRiskXml] = useState("<promo><coupon>employee</coupon></promo>");
-  const [orderRiskOut, setOrderRiskOut] = useState("");
+  const [partnerListUrl, setPartnerListUrl] = useState("");
+  const [partnerListStatus, setPartnerListStatus] = useState("");
+  const [pricingRules, setPricingRules] = useState("tier=vip&coupon=stack-employee&uid=80&note=audit");
+  const [promotionFeed, setPromotionFeed] = useState("<promo><coupon>employee</coupon></promo>");
+  const [pricingPreview, setPricingPreview] = useState("");
 
   const loadMe = useCallback(async () => {
     setErr("");
@@ -100,31 +100,31 @@ export const App: React.FC = () => {
     setMe(null);
   };
 
-  const runDepProbe = async () => {
+  const checkExtension = async () => {
     setErr("");
-    const r = await probeOptionalDependency(depName);
-    setDepProbe(r);
+    const result = await checkPartnerExtension(extensionName);
+    setExtensionStatus(result);
   };
 
-  const runUrlProbe = async () => {
+  const refreshPartnerList = async () => {
     setErr("");
-    setUrlProbeOut("");
+    setPartnerListStatus("");
     try {
-      const r = await runOptionalListProbe(urlProbe);
-      setUrlProbeOut(r);
+      const result = await fetchPartnerList(partnerListUrl);
+      setPartnerListStatus(result);
     } catch (e) {
-      setUrlProbeOut(errMsg(e));
+      setPartnerListStatus(errMsg(e));
     }
   };
 
-  const runOrderRiskProbe = async () => {
+  const previewPricing = async () => {
     setErr("");
-    setOrderRiskOut("");
+    setPricingPreview("");
     try {
-      const out = await deriveQuoteExplainer(orderRiskRaw, orderRiskXml);
-      setOrderRiskOut(out);
+      const result = await buildPricingPreview(pricingRules, promotionFeed);
+      setPricingPreview(result);
     } catch (e) {
-      setOrderRiskOut(errMsg(e));
+      setPricingPreview(errMsg(e));
     }
   };
 
@@ -134,7 +134,7 @@ export const App: React.FC = () => {
         <p className="kicker">Stack &amp; Spine</p>
         <h1>Your next read is on the shelf.</h1>
         <p className="lede">
-          Browse what we have in store; sign in for members&apos; hold requests and order notes.
+          Browse what we have in store and sign in to view your member account.
         </p>
         <a className="link-quiet" href="/">
           &larr; Storefront (floor display)
@@ -216,60 +216,59 @@ export const App: React.FC = () => {
           <p className="small muted">
             {rollLabel || "—"} <span className="muted">(member shelf stamp)</span>
           </p>
-          <h3 className="subh">List sync probe</h3>
-          <p className="small muted">
-            e.g. <code>u http://127.0.0.1:3333/api/books</code>
-          </p>
-          <div className="form">
-            <input
-              className="inline"
-              value={urlProbe}
-              onChange={(e) => setUrlProbe(e.target.value)}
-              placeholder="u http://127.0.0.1:3333/api/books"
-            />
-            <button type="button" className="btn-ghost small-btn" onClick={() => void runUrlProbe()}>
-              GET via axios chain
-            </button>
-            {urlProbeOut && <p className="small muted">{urlProbeOut}</p>}
-          </div>
-          <h3 className="subh">Checkout policy merge probe</h3>
-          <p className="small muted">Parses query + XML coupon into a stacked discount explainer.</p>
-          <div className="form">
-            <input
-              className="inline"
-              value={orderRiskRaw}
-              onChange={(e) => setOrderRiskRaw(e.target.value)}
-              placeholder="tier=vip&coupon=stack-employee&uid=80"
-            />
-            <input
-              className="inline"
-              value={orderRiskXml}
-              onChange={(e) => setOrderRiskXml(e.target.value)}
-              placeholder="<promo><coupon>employee</coupon></promo>"
-            />
-            <button type="button" className="btn-ghost small-btn" onClick={() => void runOrderRiskProbe()}>
-              Run pricing chain
-            </button>
-            {orderRiskOut && <p className="small muted">{orderRiskOut}</p>}
-          </div>
-          <h3 className="subh">Partner extension check</h3>
-          <p className="small muted">Runtime probe for optional JS packages listed in supplemental manifests.</p>
-          <div className="form">
-            <input
-              className="inline"
-              value={depName}
-              onChange={(e) => setDepName(e.target.value)}
-              placeholder="event-stream"
-            />
-            <button type="button" className="btn-ghost small-btn" onClick={() => void runDepProbe()}>
-              Probe module import
-            </button>
-            {depProbe && <p className="small muted">{depProbe}</p>}
-          </div>
+          {me?.role === "admin" && (
+            <>
+              <h3 className="subh">Partner list synchronization</h3>
+              <div className="form">
+                <input
+                  className="inline"
+                  value={partnerListUrl}
+                  onChange={(e) => setPartnerListUrl(e.target.value)}
+                  placeholder="u http://127.0.0.1:3333/api/books"
+                />
+                <button type="button" className="btn-ghost small-btn" onClick={() => void refreshPartnerList()}>
+                  Refresh partner list
+                </button>
+                {partnerListStatus && <p className="small muted">{partnerListStatus}</p>}
+              </div>
+              <h3 className="subh">Checkout policy preview</h3>
+              <div className="form">
+                <input
+                  className="inline"
+                  value={pricingRules}
+                  onChange={(e) => setPricingRules(e.target.value)}
+                  placeholder="tier=vip&coupon=stack-employee&uid=80"
+                />
+                <input
+                  className="inline"
+                  value={promotionFeed}
+                  onChange={(e) => setPromotionFeed(e.target.value)}
+                  placeholder="<promo><coupon>employee</coupon></promo>"
+                />
+                <button type="button" className="btn-ghost small-btn" onClick={() => void previewPricing()}>
+                  Preview pricing
+                </button>
+                {pricingPreview && <p className="small muted">{pricingPreview}</p>}
+              </div>
+              <h3 className="subh">Partner extension status</h3>
+              <div className="form">
+                <input
+                  className="inline"
+                  value={extensionName}
+                  onChange={(e) => setExtensionName(e.target.value)}
+                  placeholder="lodash"
+                />
+                <button type="button" className="btn-ghost small-btn" onClick={() => void checkExtension()}>
+                  Check extension
+                </button>
+                {extensionStatus && <p className="small muted">{extensionStatus}</p>}
+              </div>
+            </>
+          )}
         </aside>
       </div>
 
-      <CweLab />
+      {me?.role === "admin" && <ClientWorkbench />}
 
       <footer className="subfoot">Curbside · special orders · gift wrap when we are not too slammed.</footer>
     </div>

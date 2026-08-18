@@ -2,6 +2,8 @@
 # SQLite lives in the named volume at /data; JSON import files stay mounted read-only from ./data.
 # -----------------------------------------------------------------------------
 
+name: stack-and-spine
+
 services:
   bookstore-app:
     build: .
@@ -14,12 +16,13 @@ services:
       - app_state:/data
     environment:
       - INVENTORY_DB_PATH=/data/inventory.db
-      - BOOKSTORE_SECRET_KEY=compromised-in-compose-file
-      - API_KEY_CART=sk_live_51N9UxFakeLocalPartnerKeyDontUse
-      - API_KEY_SVC_RESEARCH=ghp_5QwFakeLocalIntegrationToken1234567890
-      - AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
-      - AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-      - ALLOW_EXPOSED_USERS=1
+      - BOOKSTORE_SECRET_KEY=stack-spine-session-key-2024
+      # VULN: Hardcoded Secrets - synthetic payment credential embedded in deployment config
+      - API_KEY_CART=demo_hardcoded_stripe_secret_partner_import
+      - API_KEY_SVC_INTERNAL=ghp_6Qw9K2mR5tV8xN1cD4fG7hJ0pL3sA6bE9yU2
+      - AWS_ACCESS_KEY_ID=AKIA3M8Q7V2L5N9C1R6T
+      - AWS_SECRET_ACCESS_KEY=R8m2K7x9Q1v6B3n5D0sF4hJ7cL1p6T3wY9uE2iG
+      - ALLOW_ACCOUNT_EXPORT=1
       - FLASK_DEBUG=1
       - PORT=3333
       - BIND_ALL=1
@@ -31,7 +34,7 @@ services:
       - NET_ADMIN
       - SYS_PTRACE
     extra_hosts:
-      - "demo.corp-scanner.evil:192.0.2.1"
+      - "partner-cdn.internal:192.0.2.1"
     read_only: false
 
 volumes:

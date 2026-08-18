@@ -7,7 +7,7 @@ from bookstore.sync.merge_state import tag_search
 
 
 def build_list_clause(search: Dict[str, Any]) -> str:
-    """Build SQL WHERE fragment — intentionally unsafe concatenation for demos."""
+    """Build SQL WHERE fragment via string concatenation for inventory list filters."""
     parts: List[str] = []
     tagged = tag_search(
         {

@@ -1,0 +1,54 @@
+{
+  "name": "endor-cicd-posture",
+  "description": "Assesses CI/CD and software supply-chain security across an Endor namespace, GitHub organization, selected repositories, or the current repository. It combines existing Endor SCPM, CI/CD, GitHub Actions, and supply-chain findings with read-only repository configuration evidence and optional local CI inspection to produce deterministic scores, critical overrides, prioritized improvements, and explicit data gaps. It does not modify Endor, GitHub, or repository state.",
+  "prompt": "file://./prompts/endor-cicd-posture.md",
+  "includeMcpJson": true,
+  "resources": [
+    "file://.kiro/steering/**/*.md"
+  ],
+  "tools": [
+    "read",
+    "shell",
+    "@endor-cli-tools"
+  ],
+  "allowedTools": [
+    "read",
+    "@endor-cli-tools/get_resource",
+    "@endor-cli-tools/get_endor_vulnerability",
+    "@endor-cli-tools/check_dependency_for_risks",
+    "@endor-cli-tools/check_dependency_for_vulnerabilities",
+    "@endor-cli-tools/describe_resource_schema"
+  ],
+  "toolsSettings": {
+    "shell": {
+      "allowedCommands": [
+        "^endorctl api ",
+        "^git (status|log|diff|branch|rev-parse|remote|show|ls-files|config --get)\\b",
+        "^gh api ",
+        "^gh (repo view|run view|pr view|pr list|issue view|issue list)\\b",
+        "^(ls|cat|rg|grep|find|head|tail|wc|jq|echo|pwd|which|test|awk|sort|uniq|date|column|cut|tr)\\b",
+        "^sed -n",
+        "^python3 -c",
+        "^python3 -m json(\\.tool)?"
+      ],
+      "deniedCommands": [
+        "(^| )endorctl scan\\b",
+        "(^| )git (push|commit|checkout|merge|rebase|reset|revert|restore|stash|tag|add)\\b",
+        "(^| )gh (pr|issue) (create|close|edit|comment|merge|review|ready|reopen)\\b",
+        "(^| )gh release (create|delete|edit)\\b",
+        "(^| )gh api .*(-X|--method) (POST|PUT|PATCH|DELETE)\\b",
+        "(^| )(pip|pipx) install\\b",
+        "(^| )(npm|pnpm|yarn|bun) (add|install|i)\\b",
+        "(^| )(poetry|uv|cargo) add\\b",
+        "(^| )go get\\b",
+        "(^| )gem install\\b",
+        "(^| )bundle add\\b",
+        "(^| )(mvn|gradle)\\b",
+        "(^| )(rm|mv|cp|chmod|chown|ln|tee)\\b",
+        "(^| )sudo\\b",
+        " >>? "
+      ],
+      "autoAllowReadonly": true
+    }
+  }
+}
