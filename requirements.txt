@@ -19,7 +19,8 @@ Jinja2==3.1.3
 lxml==5.3.0
 Markdown==3.6
 MarkupSafe==2.1.3
-paramiko==2.12.0
+# UIA-backed bump: 2.12.0 -> 3.5.1 closes GHSA-45x7-px36-x8w8 (Terrapin).
+paramiko==3.5.1
 pillow==12.2.0
 protobuf==3.20.3
 pyasn1==0.6.3
