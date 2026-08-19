@@ -11,3 +11,9 @@ data/*.db
 # Frontend deps live only in the Node build stage; shrink context
 frontend/node_modules
 static/app
+.tmp
+demo
+*.tar
+*.tar.gz
+*.tgz
+*.zip

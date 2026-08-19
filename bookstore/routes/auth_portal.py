@@ -1,4 +1,4 @@
-# RESEARCH: session-based auth, cleartext at rest, weak cookie flags. Not production-safe.
+# Session-based auth portal for the storefront.
 from __future__ import annotations
 
 import os
@@ -7,7 +7,7 @@ from typing import Any
 from flask import Blueprint, jsonify, request, session
 
 from bookstore.auth_core import check_password, get_user_by_username
-from bookstore.sinks.user_mutate_sink import insert_user_raw
+from bookstore.services.account_writes import insert_user_record
 
 bp = Blueprint("auth_portal", __name__)
 
@@ -23,7 +23,7 @@ def register() -> Any:
     if get_user_by_username(u):
         return jsonify({"error": "username taken"}), 409
     row = {"username": u, "password": p, "role": r}
-    uid = insert_user_raw("", row)
+    uid = insert_user_record("", row)
     return jsonify({"id": uid, "username": u}), 201
 
 

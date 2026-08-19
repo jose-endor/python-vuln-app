@@ -1,4 +1,4 @@
-"""User pattern flows to regex engine (CWE-1333 ReDoS propagation)."""
+"""User pattern flows to regex engine."""
 from __future__ import annotations
 
 from typing import Any, Tuple

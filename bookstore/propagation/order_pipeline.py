@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from bookstore.propagation.taint_merge import interleave, merge_ordered, strip_noise
+from bookstore.propagation.field_merge import interleave, merge_ordered, strip_prefix
 
 
 def _num(v: Any, default: float) -> float:
@@ -36,7 +36,7 @@ def quote_seed(body: dict[str, Any], args: dict[str, str]) -> dict[str, Any]:
     coupon_a = str(body.get("coupon_a") or args.get("coupon_a") or "")
     coupon_b = str(body.get("coupon_b") or args.get("coupon_b") or "")
     tier_hint = str(body.get("tier") or args.get("tier") or "guest")
-    coupon = interleave(strip_noise(coupon_a, "promo:"), coupon_b, str(body.get("order", "a")))
+    coupon = interleave(strip_prefix(coupon_a, "promo:"), coupon_b, str(body.get("order", "a")))
     merged = merge_ordered(
         ("tier", "coupon"),
         {"tier": tier_hint, "coupon": coupon},

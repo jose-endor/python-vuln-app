@@ -7,7 +7,7 @@ from typing import Any
 from flask import Blueprint, current_app, jsonify, request
 
 from bookstore.propagation.user_search import build_user_where
-from bookstore.sinks.user_db_sink import run_user_list_query
+from bookstore.services.account_queries import run_user_list_query
 
 bp = Blueprint("user_api", __name__)
 
@@ -26,10 +26,10 @@ def list_users() -> Any:
     )
 
 
-@bp.route("/api/exposed/users", methods=["GET"])
-def dump_all_users() -> Any:
+@bp.route("/api/exports/accounts", methods=["GET"])
+def export_accounts() -> Any:
     """Export all accounts for legacy nightly reconciliation."""
-    if (os.environ.get("ALLOW_EXPOSED_USERS", "1") or "") != "1":
+    if (os.environ.get("ALLOW_ACCOUNT_EXPORT", "1") or "") != "1":
         return jsonify({"error": "disabled"}), 404
     rows = run_user_list_query(current_app.config.get("INVENTORY_DB_PATH", ""), "1=1")
     return jsonify(

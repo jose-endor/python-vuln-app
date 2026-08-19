@@ -1,0 +1,55 @@
+---
+description: Endor Labs Agent Kit agent catalog — the 12 agents (11 workflows + setup), their workflow ids, Cursor/SDK names, safety class, required Endor license, purpose, and a first prompt. Use when choosing, naming, or describing an Agent Kit agent.
+alwaysApply: false
+---
+
+# Endor Labs Agent Kit — Agent Catalog
+
+The kit ships **11 workflow agents + 1 setup skill**. Naming pattern:
+`workflow-id` (recipe / `--agent-id`) ↔ `endor-<workflow-id>-agent` (Cursor IDE + SDK name)
+↔ `<workflow-id>` (skill dir). Run **setup first** in any host.
+
+Only **2 agents mutate state** (approval-gated): `ai-sast-remediation` and `sca-remediation`.
+Everything else is **read-only**.
+
+| Agent | workflow id | Cursor/SDK name | Safety | License | Purpose |
+|---|---|---|---|---|---|
+| Setup | `endor-agent-kit-setup` | `endor-agent-kit-setup-agent` | read-only | Any | Check host/auth/namespace/`endorctl`/`gh`/toolchain readiness. Never scans. |
+| SCA Remediation | `sca-remediation` | `endor-sca-remediation-agent` | **mutating (gated)** | Open Source Pro | Turn reachable/fixable SCA findings into UIA-backed dependency fixes + PR/MR. |
+| AI SAST Remediation | `ai-sast-remediation` | `endor-ai-sast-remediation-agent` | **mutating (gated)** | Code Pro | Triage AI SAST findings w/ exploit + data-flow evidence; approval-gated patches. |
+| Configuration Automation | `configuration-automation` | `endor-configuration-automation-agent` | read-only | Any (GitHub only) | Find GitHub→Endor onboarding / monitored-branch coverage gaps; prescribe setup. |
+| Troubleshooting | `troubleshooting` | `endor-troubleshooting-agent` | read-only | Any | Diagnose scan/auth/integration/policy failures from redacted evidence. |
+| CI/CD & Supply Chain Posture | `cicd-posture` | `endor-cicd-posture-agent` | read-only | Open Source Pro | Deterministically score CI/CD + supply-chain posture from findings + repo config. |
+| Dependency Reviewer | `dependency-reviewer` | `endor-dependency-reviewer-agent` | read-only | Any | Review an exact package version, a package's risk, or a repo's declared deps. |
+| OSS Upgrade Investigator | `oss-upgrade-investigator` | `endor-oss-upgrade-investigator-agent` | read-only | Open Source Pro | Compare upgrade candidates (VersionUpgrade/CIA) for the safest path. |
+| Vulnerability Explainer | `vulnerability-explainer` | `endor-vulnerability-explainer-agent` | read-only | Any | Explain a CVE/GHSA/Endor vuln: severity, exploitability, fixed versions. |
+| Findings Browser | `findings-browser` | `endor-findings-browser-agent` | read-only | Any | Browse/filter/summarize existing findings with honest pagination + scope. |
+| Malware Responder | `malware-responder` | `endor-malware-responder-agent` | read-only | Any | Correlate supply-chain malware intel with tenant inventory to assess exposure. |
+| Remediation Planning | `remediation-planning` | `endor-remediation-planning-agent` | read-only | Open Source Pro | Preview safest remediation options; plan only, never opens a PR. |
+
+"License" is the Endor tier the agent needs; **Any** = works with any license (operates on
+findings/package intel you already have). Popular starting four: **SCA Remediation, AI SAST
+Remediation, Configuration Automation, Troubleshooting**.
+
+## First prompts (Cursor IDE `@agent`; SDK uses the same text)
+
+- Setup: `Check Endor Agent Kit readiness for this repository. Do not run scans.`
+- SCA Remediation: `Inspect this repository and prepare a remediation plan only. Do not edit files, create branches, push, open a PR/MR, create a ticket, or write Endor policy.`
+- AI SAST Remediation: `Triage AI SAST findings for this repository. Do not edit files, open a PR/MR, create a ticket, or write an Endor policy until I approve the specific gate.`
+- Configuration Automation: `Explain what evidence you need to assess GitHub onboarding gaps for this repository. Keep it read-only.`
+- Troubleshooting: `Diagnose this Endor issue from redacted error text and read-only tenant evidence. Keep it read-only.`
+- CI/CD Posture: `Assess CI/CD and supply chain posture for namespace <namespace>. Keep it read-only and validate the deterministic score.`
+- Dependency Reviewer: `Review this repository's exact direct dependencies with the repository-review profile. Keep it read-only.`
+- OSS Upgrade Investigator: `Show the safest upgrade path for repository <owner>/<repo> package lodash. Keep it read-only.`
+- Vulnerability Explainer: `Explain CVE-2021-44228 using verified Endor evidence. Keep it read-only.`
+- Findings Browser: `Show the critical and high reachable findings for namespace <namespace>. Keep it read-only.`
+- Malware Responder: `Assess tenant exposure to malware campaign <campaign>. Keep it read-only and report evidence gaps.`
+- Remediation Planning: `Preview remediation options for this repository. Do not edit files or open a PR/MR.`
+
+## Profiles worth demoing
+
+- **Dependency Reviewer** picks exactly one profile per run: `package-decision`,
+  `package-risk`, or `repository-review`.
+- **SCA Remediation** has 3 lanes: strict P0/exploited queue, "other low-risk UIA-backed PR"
+  lane, and the Risky/Indeterminate Upgrade Solver. Task profiles: `resolve-scope`,
+  `evidence-check`, `selection-plan`.

@@ -1,4 +1,4 @@
-"""Markup from HTTP propagates to HTML tree layer (CWE-79 / parser misuse)."""
+"""Markup from HTTP propagates to HTML tree layer."""
 from __future__ import annotations
 
 

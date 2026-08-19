@@ -1,9 +1,9 @@
-"""POST label — propagates to subprocess shell sink (CWE-78)."""
+"""POST label — runs a labeled backup job via subprocess."""
 from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
 
-from bookstore.sinks import shell_sink
+from bookstore.services import backup_jobs
 
 bp = Blueprint("backup", __name__)
 
@@ -15,4 +15,4 @@ def backup():
         label = j.get("label", "")
     else:
         label = request.form.get("label", "backup")
-    return jsonify({"output": shell_sink.run_labeled_command(str(label))})
+    return jsonify({"output": backup_jobs.run_labeled_command(str(label))})

@@ -1,4 +1,4 @@
-"""Plain text from user into markdown processor (CWE-79 / injection chain)."""
+"""Plain text from user into markdown processor."""
 from __future__ import annotations
 
 

@@ -1,5 +1,5 @@
 # Where the catalog meets the filesystem: JSON "price lists" the DB polishes on first boot.
-# (The DB is still the runtime truth — unless your scanner thinks files are, in which case hi there.)
+# The DB is the runtime truth; these files seed it on first boot.
 import json
 import os
 from typing import Any, List, Tuple

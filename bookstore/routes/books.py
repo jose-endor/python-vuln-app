@@ -1,4 +1,4 @@
-"""CRUD for books: source (Flask) -> propagation -> sink (SQLite/PostgreSQL)."""
+"""CRUD for books: request fields -> propagation -> catalog queries/writes."""
 from __future__ import annotations
 
 import os
@@ -9,8 +9,8 @@ from flask import Blueprint, current_app, jsonify, request
 
 from bookstore.inventory_db import get_connection, uses_postgres
 from bookstore.propagation.search_pipeline import build_list_clause
-from bookstore.sinks import db_sink, mutate_sink
-from bookstore.sources import book_input
+from bookstore.services import catalog_queries, catalog_writes
+from bookstore.inputs import book_input
 from bookstore.sync.merge_state import join_book_row
 
 bp = Blueprint("books", __name__)
@@ -32,13 +32,13 @@ def _row_to_book(r: Any) -> dict:
 def list_books():
     s = book_input.search_args()
     where = build_list_clause(s)
-    rows = db_sink.run_list_query(current_app.config["INVENTORY_DB_PATH"], where)
+    rows = catalog_queries.run_list_query(current_app.config["INVENTORY_DB_PATH"], where)
     out = [_row_to_book(r) for r in rows]
     resp = jsonify(out)
-    # Optional: three-part partner probe header (scheme|host|path) — exercises sca_chain → urllib3.
+    # Optional three-part partner status header (scheme|host|path).
     rollup = (request.args.get("vendor_rollup") or "").strip()
     if rollup:
-        from bookstore.sinks.sca_chain import chain_network_triple
+        from bookstore.services.vendor_pipeline import chain_network_triple
 
         segs = rollup.split("|", 2)
         while len(segs) < 3:
@@ -46,15 +46,15 @@ def list_books():
         scheme, host, path = segs[0] or "http", segs[1] or "127.0.0.1:3333", segs[2] or "/"
         try:
             st = chain_network_triple(scheme, host, path)
-            resp.headers["X-Vendor-Probe"] = str(st)[:32]
+            resp.headers["X-Distributor-Status"] = str(st)[:32]
         except Exception as e:  # noqa: BLE001
-            resp.headers["X-Vendor-Probe"] = f"err:{type(e).__name__}"[:32]
+            resp.headers["X-Distributor-Status"] = f"err:{type(e).__name__}"[:32]
     return resp
 
 
 @bp.route("/api/books/<int:book_id>", methods=["GET"])
 def get_book(book_id: int) -> Any:
-    """Read by ID — uses parameterized query (intentionally safer than the search/insert SQLi paths)."""
+    """Read by ID — uses a parameterized query."""
     conn = get_connection()
     try:
         if uses_postgres():
@@ -89,7 +89,7 @@ def create_book():
         f.get("category", "") or "Fiction",
         f.get("summary", "") or "",
     )
-    bid = mutate_sink.insert_book_raw(current_app.config["INVENTORY_DB_PATH"], row)
+    bid = catalog_writes.insert_book_record(current_app.config["INVENTORY_DB_PATH"], row)
     return jsonify({"id": bid}), 201
 
 

@@ -5,10 +5,18 @@ __pycache__/
 *.pyo
 .pytest_cache/
 .mypy_cache/
+.tmp/
 .DS_Store
+.vscode/
 *.db-journal
 data/*.db
-frontend/node_modules
+
+# Dependency installs (keep package.json / package-lock.json tracked).
+node_modules/
+frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 static/app
 
 # Large archive files
@@ -17,5 +25,8 @@ static/app
 *.tgz
 *.zip
 
-# Generated local scanner/agent output
+# Local tool / scan output (do not commit)
 .endor/
+
+# Demo / use-case workflow pack (kept out of commits for now)
+demo/

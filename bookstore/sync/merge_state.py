@@ -1,8 +1,8 @@
 """
-Synchronized merge of user input and defaults before DB or file sinks.
+Synchronized merge of user input and defaults before catalog or file writes.
 
-Taint from multiple fields is combined and forwarded so analyzers can track
-merge and synchronize style flows across modules.
+Request fields are combined with catalog defaults before downstream services
+prepare queries, exports, and fulfillment records.
 """
 from __future__ import annotations
 

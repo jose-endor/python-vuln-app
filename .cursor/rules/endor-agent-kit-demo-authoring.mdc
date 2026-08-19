@@ -1,0 +1,52 @@
+---
+description: Conventions for building portable Endor Labs Agent Kit demo / use-case workflow examples. Applies when authoring or editing demo content.
+globs: demo/**
+alwaysApply: false
+---
+
+# Authoring Endor Agent Kit Demos (use-case workflows)
+
+Goal: build **portable, reusable** use-case demos that show what each agent does in a real
+dev workflow, so they can be dropped into any project. Keep everything Cursor-focused for now.
+
+## Portability rules (non-negotiable)
+
+- **No hard-coded project specifics.** Use placeholders: `<owner>/<repo>`, `<namespace>`,
+  `<cve>`, `<package>@<version>`. If a demo needs a target app, describe the traits it needs
+  (e.g. "a repo with known-vulnerable dependencies") rather than naming one.
+- A demo is self-describing: prerequisites, which agent(s), exact prompt(s), expected
+  behavior, and what "success" looks like — runnable in any repo with the kit installed.
+- Never instruct edits to installed/generated plugin files. Behavior changes are upstream
+  source-repo changes.
+
+## Per-demo structure
+
+Each use case is one folder `demo/endor-agent-kit/use-cases/<slug>/` with a `README.md`:
+
+1. **Scenario** — the real-world moment (1–2 sentences) and the persona it serves.
+2. **Agent(s)** — workflow id + `endor-<id>-agent` name + safety class.
+3. **Prerequisites** — kit installed, setup run, license tier, auth/namespace, any target
+   traits. Link to `endor-agent-kit-cursor` for install.
+4. **Steps** — exact Cursor prompt(s) (`@endor-<id>-agent ...`) and/or SDK command(s).
+5. **Expected behavior** — evidence-first output, the verdict, and (for mutating agents) the
+   specific approval gate(s) that must be confirmed.
+6. **Guardrails to highlight** — what the agent refuses / defers to `data_gaps` (great for
+   showing safety to a security audience).
+7. **Talk track** — 2–3 lines on the value delivered.
+
+## Accuracy & safety when scripting
+
+- Match agent names/ids/safety classes to `endor-agent-kit-catalog`; match behaviors to
+  `endor-agent-kit-safety`. Don't invent flags or output fields.
+- For `sca-remediation` / `ai-sast-remediation`, always script **plan-only first**, then call
+  out each approval gate explicitly. Never depict silent mutation.
+- Show read-only agents staying read-only; show honest `data_gaps` when evidence is missing.
+- Prefer prompts that keep scope tight and end read-only unless the demo is specifically
+  about an approved mutation.
+
+## Coverage target
+
+Aim for at least one use case per agent, plus a couple of cross-agent flows (e.g.
+Findings Browser → Remediation Planning → SCA Remediation; Vulnerability Explainer →
+Dependency Reviewer). Persona framing for the human-facing guide lives in
+`demo/endor-agent-kit/agents-in-dev-workflows.md`.

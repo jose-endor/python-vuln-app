@@ -1,0 +1,56 @@
+---
+description: What the Endor Labs Agent Kit / AI plugins are, how they are distributed, and where to find the deeper rules. Read first for any Agent Kit / ai-plugins work. Portable across projects.
+alwaysApply: true
+---
+
+# Endor Labs Agent Kit — Overview (start here)
+
+The **Endor Labs Agent Kit** (a.k.a. "AI plugins") is a catalog of ready-to-use AppSec
+security agents that run inside AI coding assistants. Each agent packages one Endor Labs
+workflow (triage findings, remediate deps, diagnose scans, etc.) with a built-in safety
+contract, approval gates, and evidence requirements. Current package version: **2.2.1**.
+
+> This rule set is **project-agnostic and portable**. The four `endor-agent-kit-*` rules
+> describe the kit itself, not any single repo, so you can copy them into any project's
+> `.cursor/rules/` and they still apply. Refer to the current workspace generically as
+> "this repository"; never hard-code another project's paths or names into these rules.
+
+## Two upstream repos (do not confuse them)
+
+- **[endorlabs/ai-plugins](https://github.com/endorlabs/ai-plugins)** — the public
+  **distribution mirror**. This is what users install from (Claude Code, Codex, Gemini CLI,
+  Antigravity CLI, Cursor IDE, Cursor SDK). Generated per-host packages live under
+  `plugins/`. Behavior is NOT authored here.
+- **[endorlabs/endor-labs-agent-kit](https://github.com/endorlabs/endor-labs-agent-kit)** —
+  the **source/builder** repo. Agent behavior, recipes, guardrails, and tests live here.
+  Change behavior in source, regenerate, then a sync PR updates the mirror.
+- Docs: https://docs.endorlabs.com/secure-ai-coding/agent-kit/index
+
+Rule of thumb: **treat installed/generated package files as read-only artifacts.** If a
+workflow needs different agent behavior, that is an upstream source-repo change, not an edit
+to an installed package.
+
+## Getting started in any repo (host-agnostic)
+
+1. **Install** the kit for your host (see `endor-agent-kit-cursor` for Cursor IDE + SDK;
+   other hosts follow the same catalog with host-specific install syntax).
+2. **Run setup first**: `Use the endor-agent-kit-setup skill to check Endor Labs Agent Kit
+   readiness.` Setup is readiness-only — it never runs scans or `endorctl host-check`.
+3. **Invoke a workflow agent** in plain language (see `endor-agent-kit-catalog`).
+
+A repo may already have an install for another host (e.g. Claude `.claude/`, Codex). That
+is fine — the same agent catalog and safety contract apply everywhere; only the install +
+invocation syntax differ per host.
+
+## The deeper rules (read the relevant one for the task)
+
+- **`endor-agent-kit-catalog`** — the 12 agents (11 workflows + setup): ids, Cursor/SDK
+  names, safety class, license, purpose, and first prompts. Read when picking or describing
+  an agent.
+- **`endor-agent-kit-safety`** — safety classes, approval gates, evidence-first behavior,
+  namespace/project provenance, output contract, and advisory hooks. Read when reasoning
+  about what an agent will/won't do.
+- **`endor-agent-kit-cursor`** — exact install + invocation for Cursor IDE and Cursor SDK.
+  Read when writing runnable steps.
+- **`endor-agent-kit-demo-authoring`** — conventions for building demo / use-case workflow
+  examples that showcase these agents. Read when creating or editing demo content.
