@@ -1,0 +1,93 @@
+---
+description: How to install, invoke, and redeploy the Endor Labs Agent Kit in Cursor IDE and the Cursor SDK — plus where these rules live and how to transfer them to another project. Use when writing runnable Cursor steps or setting up a new repo.
+alwaysApply: false
+---
+
+# Endor Labs Agent Kit — Cursor IDE & SDK
+
+Two Cursor lanes share the same 12-agent catalog and safety contract:
+
+- **Cursor IDE plugin** — interactive chat agents, skills, advisory hooks, optional MCP.
+- **Cursor SDK** — Python automation for CI, backends, orchestration, and cloud agents.
+
+## Where these rules live (and how to transfer them)
+
+- Cursor project rules live in **`.cursor/rules/*.mdc`** at the repo root. The Agent Kit
+  rules are the five `endor-agent-kit-*.mdc` files there.
+- These rules are **project-agnostic** — to use them in another repo, copy the
+  `endor-agent-kit-*.mdc` files into that repo's `.cursor/rules/`. A helper is provided:
+  `demo/endor-agent-kit/install-cursor-rules.sh --dest /path/to/other/repo`.
+- Do not hard-code a specific project's paths/names into these rules. Keep them generic.
+
+## Cursor IDE — install
+
+Install from the Cursor Marketplace. In Cursor Agent chat:
+
+```text
+/add-plugin endorlabs
+```
+
+Marketplace page: https://cursor.com/marketplace/endorlabs — open your project and reload
+Cursor if prompted. The public marketplace listing is not auto-updated by git tags.
+
+## Cursor IDE — setup first (readiness only)
+
+```text
+Use the endor-agent-kit-setup skill to check Endor Labs Agent Kit readiness.
+```
+
+Setup guides package-manager-first `endorctl` install, verifies Endor auth + namespace, and
+reports missing `gh`/toolchain. It never runs scans, `endorctl host-check`, edits shell
+profiles, or auto-installs runtimes.
+
+## Cursor IDE — invoke a workflow
+
+Pick an Endor agent from the agent picker, or address it by name. The agent name is always
+`endor-<workflow-id>-agent`:
+
+```text
+@endor-ai-sast-remediation-agent triage AI SAST findings for this repository
+@endor-sca-remediation-agent check this repository for P0 SCA findings I can start remediating
+@endor-configuration-automation-agent probe GitHub org <org> for Endor Labs monitored-branch onboarding gaps
+@endor-troubleshooting-agent diagnose this Endor Labs scan failure from redacted error text and read-only tenant evidence
+```
+
+Skills are reference/support material and are invoked as `Use the <workflow-id> skill to ...`.
+Do not substitute a skill for the agent when you want the workflow executed.
+
+What ships with the IDE plugin (auto-active): 12 agents (`model: composer-2.5[fast=false]`),
+12 skills, advisory hooks (`beforeSubmitPrompt`, `beforeShellExecution`, `afterFileEdit`),
+and an optional MCP server (`npx -y endorctl ai-tools mcp-server`, opt-in via setup).
+
+## Cursor SDK — install & run
+
+```bash
+python3 -m pip install -r cursor-sdk/requirements.txt   # dependency: cursor-sdk
+export CURSOR_API_KEY="crsr_..."
+```
+
+The launcher is `cursor-sdk/run_cursor_agent.py <agent> "<prompt>" [flags]`. `<agent>`
+accepts either the id (`sca-remediation`) or the name (`endor-sca-remediation-agent`).
+Key flags: `--mode local|cloud` (default `local`), `--workspace <dir>` (local),
+`--repo-url` + `--ref` (cloud, `--repo-url` required), `--auto-create-pr` (cloud),
+`--model` (default pins `composer-2.5` with `fast=false`), `--api-key`.
+
+Local run:
+
+```bash
+python cursor-sdk/run_cursor_agent.py endor-configuration-automation-agent \
+  --workspace /path/to/repo \
+  "Explain what evidence you need to assess GitHub onboarding gaps. Keep it read-only."
+```
+
+Cloud run (plan only — no mutation without approval):
+
+```bash
+python cursor-sdk/run_cursor_agent.py endor-sca-remediation-agent \
+  --mode cloud --repo-url https://github.com/<org>/<repo> --ref main \
+  "Prepare a remediation plan only. Do not edit files or open a PR."
+```
+
+Cloud agents appear in Cursor Web under Filter > Source > SDK. The SDK has no hooks/MCP; the
+agent prompt handles Endor access. Never paste Cursor/Endor/source-provider secrets into
+prompts — use env vars.

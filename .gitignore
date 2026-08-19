@@ -27,3 +27,6 @@ static/app
 
 # Local tool / scan output (do not commit)
 .endor/
+
+# Demo / use-case workflow pack (kept out of commits for now)
+demo/

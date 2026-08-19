@@ -12,8 +12,6 @@ data/*.db
 frontend/node_modules
 static/app
 .tmp
-.kiro
-kiro-agent-kit
 demo
 *.tar
 *.tar.gz
