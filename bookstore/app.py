@@ -15,6 +15,7 @@ from bookstore.routes.curve import bp as curve_bp
 from bookstore.routes.fetcher import bp as fetcher_bp
 from bookstore.routes.orders_api import bp as orders_api_bp
 from bookstore.routes.preview import bp as preview_bp
+from bookstore.routes.reports import bp as reports_bp
 from bookstore.routes.ops_diagnostics import bp as ops_diagnostics_bp
 from bookstore.routes.vendor_hooks import bp as vendor_hooks_bp
 from bookstore.routes.user_api import bp as user_api_bp
@@ -86,6 +87,7 @@ def create_app() -> Flask:
     app.register_blueprint(vendor_hooks_bp, url_prefix="/")
     app.register_blueprint(ops_diagnostics_bp, url_prefix="/")
     app.register_blueprint(merchandising_bp, url_prefix="/")
+    app.register_blueprint(reports_bp, url_prefix="/")
 
     @app.route("/app", defaults={"subpath": ""})
     @app.route("/app/", defaults={"subpath": ""})
